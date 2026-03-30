@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gerenciador Pro & Roleta</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    /* =========================================
+       ESTILOS GLOBAIS E DA BANCA
+       ========================================= */
+    :root {
+      --bg-puro: #000000;
+      --bg-card: #141414;
+      --bg-input: #1f1f1f;
+      --txt-primario: #ffffff;
+      --txt-secundario: #a0a0a0;
+      --cor-pago: #22c55e;
+      --cor-nao-pago: #ef4444;
+      --cor-destaque: #3b82f6;
+      --cor-dourada: #d4af37;
+    }
+
+    .hidden { display: none !important; }
+
+    #banca-wrapper {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-puro);
+      color: var(--txt-primario);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    #banca-wrapper h1, #banca-wrapper h2, #banca-wrapper h3 { margin: 0; font-weight: 600; }
+    #banca-wrapper button { border: none; cursor: pointer; border-radius: 8px; font-size: 14px; transition: background 0.2s; }
+
+    .input-minimal { 
+      width: 100%; 
+      box-sizing: border-box; 
+      background-color: var(--bg-input); 
+      color: var(--txt-primario); 
+      border: 1px solid transparent; 
+      padding: 12px; 
+      border-radius: 8px; 
+      font-size: 14px; 
+    }
+    .input-minimal:focus { outline: none; border-color: var(--cor-destaque); }
+
+    /* Modal Customizado (Gerenciador) */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; z-index: 999;
+    }
+    .modal-box {
+      background-color: var(--bg-card); border: 1px solid var(--cor-dourada); border-radius: 12px;
+      padding: 24px; width: 90%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .modal-box h3 { color: var(--cor-dourada); margin-bottom: 8px; text-transform: uppercase; font-size: 16px; letter-spacing: 1px; text-align: center; }
+    .modal-box p { font-size: 13px; color: var(--txt-secundario); margin-bottom: 16px; text-align: center; }
+    .modal-acoes { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-modal-cancelar { flex: 1; background: transparent; border: 1px solid var(--txt-secundario); color: var(--txt-primario); padding: 12px; font-weight: 600; }
+    .btn-modal-confirmar { flex: 1; background: var(--cor-destaque); color: white; padding: 12px; font-weight: bold; }
+
+    /* --- TELA INICIAL (BANCA) --- */
+    #tela-inicial { flex: 1; overflow-y: auto; padding: 20px; }
+    .painel-apresentacao { text-align: center; padding: 24px 16px; background-color: var(--bg-card); border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .painel-apresentacao h1 { font-size: 24px; margin-bottom: 8px; color: var(--cor-destaque); }
+    .painel-apresentacao h2 { font-size: 20px; margin-bottom: 8px; color: var(--cor-dourada); }
+    .painel-apresentacao p { font-size: 14px; color: var(--txt-secundario); margin-bottom: 20px; }
+
+    .form-criar { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+    .btn-criar-novo { background-color: var(--cor-pago); color: #000; font-weight: bold; padding: 14px 24px; font-size: 16px; width: 100%; border-radius: 10px; margin-top: 4px; }
+    .btn-roleta-livre { background-color: var(--cor-dourada); color: #000; font-weight: bold; padding: 14px 24px; font-size: 16px; width: 100%; border-radius: 10px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;}
+
+    .historico-header { font-size: 16px; margin-bottom: 12px; color: var(--txt-secundario); border-bottom: 1px solid var(--bg-input); padding-bottom: 8px; }
+    .card-historico { background-color: var(--bg-card); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .info-historico h3 { font-size: 16px; margin-bottom: 4px; }
+    .info-historico p { font-size: 13px; color: var(--txt-secundario); margin: 0; }
+    .acoes-historico { display: flex; gap: 8px; }
+    .btn-entrar { background-color: var(--cor-destaque); color: white; padding: 8px 16px; }
+    .btn-apagar-lista { background-color: transparent; color: var(--cor-nao-pago); border: 1px solid var(--cor-nao-pago); padding: 8px; }
+
+    /* --- TELA DA LISTA (BANCA) --- */
+    #tela-lista { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; }
+    #tela-lista header { background-color: var(--bg-card); padding: 12px 16px; border-bottom: 1px solid var(--bg-input); position: sticky; top: 0; z-index: 100; }
+    .header-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;}
+    .titulo-lista { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;}
+    .btn-voltar { background: none; color: var(--cor-destaque); font-size: 20px; padding: 0 8px; }
+    #tela-lista h1 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .btn-copiar, .btn-exportar { color: white; padding: 6px 12px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; flex-shrink: 0;}
+    .btn-copiar { background-color: var(--cor-destaque); }
+    .btn-exportar { background-color: var(--cor-dourada); color: #000; font-weight: bold; }
+
+    .resumo-pagamentos { background-color: var(--bg-input); border-radius: 8px; padding: 8px; display: flex; justify-content: space-around; font-size: 13px; color: var(--txt-secundario); }
+    .resumo-pagamentos strong { color: var(--txt-primario); }
+    .resumo-pago { color: var(--cor-pago); }
+    .resumo-pendente { color: var(--cor-nao-pago); }
+
+    .container-pesquisa { background-color: var(--bg-card); padding: 8px 16px; position: sticky; top: 95px; z-index: 99; }
+    #busca { width: 100%; background-color: var(--bg-input); color: var(--txt-primario); border: 1px solid transparent; padding: 10px; border-radius: 10px; box-sizing: border-box; }
+    #lista { flex: 1; overflow-y: auto; padding: 10px 16px 140px 16px; }
+
+    .card { background-color: var(--bg-card); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .linha-participante { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .nome-participante { font-size: 15px; font-weight: 500; }
+    .slot-info { font-size: 12px; color: var(--txt-secundario); display: flex; align-items: center; gap: 4px; }
+    .btn-editar-slot { color: var(--txt-secundario); background: none; font-size: 10px; padding: 2px 4px; }
+    
+    .acoes-participante { display: flex; gap: 6px; align-items: center; }
+    .btn-toggle-pago { background-color: var(--bg-input); color: var(--txt-secundario); font-size: 16px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; }
+    .card.pago-ativo .btn-toggle-pago { background-color: var(--cor-pago); color: #004d2c; }
+    .btn-remover { color: var(--cor-nao-pago); background: none; font-size: 14px; padding: 8px; }
+
+    .linha-status { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--txt-secundario); }
+    .status-badge { font-weight: 600; color: var(--cor-nao-pago); }
+    .card.pago-ativo .status-badge { color: var(--cor-pago); }
+
+    #painel-adicionar { background-color: var(--bg-card); border-top: 1px solid var(--bg-input); padding: 12px 16px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; z-index: 101; }
+    #painel-adicionar h2 { font-size: 14px; color: var(--txt-secundario); margin-bottom: 8px; }
+    .input-col { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .btn-adicionar { width: 100%; background-color: #166534; color: white; padding: 12px; font-weight: 600; font-size: 15px; }
+    .btn-adicionar:hover { background-color: #15803d; }
+
+    /* =========================================
+       ESTILOS DA ROLETA
+       ========================================= */
+    .roleta-girando { transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1); }
+    .oculto { display: none !important; }
+    .texto-roleta { text-shadow: 1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+    
+    #roleta-wrapper ::-webkit-scrollbar { width: 6px; }
+    #roleta-wrapper ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    #roleta-wrapper ::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 10px; }
+    #roleta-wrapper ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.5); }
+  </style>
+</head>
+<body class="bg-black m-0 p-0 overflow-hidden">
+
+<div id="banca-wrapper">
+  
+  <div id="tela-inicial">
+    <div class="painel-apresentacao">
+      <h1>Banca Pro</h1>
+      <p>Gerencie pagamentos e slots facilmente.</p>
+      
+      <div class="form-criar">
+        <input type="text" id="nova-banca-nome" class="input-minimal" placeholder="Nome da Banca (Opcional)">
+        <input type="number" id="nova-banca-valor" class="input-minimal" placeholder="Valor Obrigatório" value="20">
+        <button class="btn-criar-novo" onclick="criarNovaLista()">➕ Criar Nova Banca</button>
+      </div>
+    </div>
+
+    <div class="painel-apresentacao" style="margin-top: 10px;">
+      <h2>Roleta Independente</h2>
+      <p>Acesse o sorteio sem gerenciar pagamentos.</p>
+      <button class="btn-roleta-livre" onclick="abrirRoletaLivre()">🎲 Acessar Roleta da Rinha</button>
+    </div>
+
+    <h2 class="historico-header">Suas Bancas</h2>
+    <div id="container-historico"></div>
+  </div>
+
+  <div id="tela-lista" class="hidden">
+    <header>
+      <div class="header-linha-topo">
+        <div class="titulo-lista">
+          <button class="btn-voltar" onclick="voltarAoInicio()">←</button>
+          <h1 id="nome-lista-atual">Nome da Banca</h1>
+        </div>
+        <div style="display: flex; gap: 5px;">
+          <button class="btn-copiar" onclick="copiarLista()">📋 Copiar</button>
+          <button class="btn-exportar" onclick="abrirModalSorteio()">🎲 Sortear</button>
+        </div>
+      </div>
+      
+      <div class="resumo-pagamentos" id="resumo">
+        <span>Total: <strong id="resumo-total">0</strong></span>
+        <span>Pagos: <strong id="resumo-pagos" class="resumo-pago">0</strong></span>
+        <span>Falta: <strong id="resumo-restante" class="resumo-pendente">R$0</strong></span>
+      </div>
+    </header>
+
+    <div class="container-pesquisa">
+      <input type="text" id="busca" placeholder="🔍 Buscar participante..." onkeyup="filtrarLista()">
+    </div>
+
+    <div id="lista"></div>
+
+    <div id="painel-adicionar">
+      <h2 id="titulo-adicionar">Adicionar Participante</h2>
+      <div class="input-col">
+        <input type="text" id="nome" class="input-minimal" placeholder="Nome">
+        <input type="text" id="slot" class="input-minimal" placeholder="Slot (opcional)">
+      </div>
+      <button class="btn-adicionar" onclick="adicionar()">➕ Adicionar</button>
+    </div>
+  </div>
+
+  <div id="modal-sorteio" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>Preparar Sorteio</h3>
+      <p id="msg-participantes-modal">Você tem X participantes nesta banca.</p>
+      
+      <label style="font-size: 12px; color: var(--txt-secundario); display: block; margin-bottom: 6px; text-transform: uppercase; font-weight: bold;">Dividir em quantas mesas?</label>
+      <input type="number" id="input-qtd-mesas" class="input-minimal" style="text-align: center; font-size: 18px; font-weight: bold;" value="1" min="1">
+      
+      <p id="erro-mesas" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
+      
+      <div class="modal-acoes">
+        <button class="btn-modal-cancelar" onclick="fecharModalSorteio()">Cancelar</button>
+        <button class="btn-modal-confirmar" onclick="confirmarSorteio()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="roleta-wrapper" class="hidden flex flex-col lg:flex-row h-[100dvh] w-full bg-gradient-to-b from-[#0a0e18] to-[#05070d] text-white font-sans overflow-y-auto lg:overflow-hidden overflow-x-hidden">
+  
+  <aside class="w-full lg:w-[320px] border-b lg:border-b-0 lg:border-r border-[#d4af37]/20 bg-[#06080f]/90 flex flex-col z-10 relative shrink-0">
+      
+      <div class="p-3 bg-[#000]">
+        <button onclick="voltarDaRoletaParaBanca()" class="w-full rounded bg-[#1a3a5f] border border-[#d4af37]/30 py-2 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:brightness-110 transition flex items-center justify-center gap-2">
+           ← Voltar ao Gerenciador
+        </button>
+      </div>
+
+      <div class="p-5 border-b border-[#d4af37]/15">
+          <h2 class="text-lg font-semibold text-[#f5e6c8] uppercase tracking-wider">No sorteio</h2>
+          <p class="text-xs text-white/45 mt-1">Quem você adicionar entra na mesa atual.</p>
+      </div>
+      
+      <div class="p-4 border-b border-[#d4af37]/15 bg-[#04060c]">
+          <form id="form-participante" class="space-y-3">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-[#d4af37]/80">Adicionar participante</p>
+              
+              <div>
+                  <input type="text" id="input-nome" placeholder="Nome" autocomplete="off"
+                      class="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-[#d4af37]/50 focus:outline-none transition-colors">
+                  <p id="erro-nome-add" class="oculto text-[10px] text-[#c41e3a] font-semibold mt-1 ml-1">Nome idêntico em uso, escolha outro.</p>
+              </div>
+              
+              <input type="text" id="input-jogo" placeholder="Nome do jogo" autocomplete="off"
+                  class="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-[#d4af37]/50 focus:outline-none">
+              
+              <button type="submit" id="btn-submit-participante"
+                  class="w-full rounded-lg bg-gradient-to-r from-[#1a3a5f] to-[#0d2847] py-2.5 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:brightness-110 transition mt-2">
+                  Incluir participante
+              </button>
+          </form>
+          
+          <button id="btn-nova-rinha" class="mt-3 w-full rounded-lg bg-[#d4af37]/20 border border-[#d4af37]/50 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#f5e6c8] hover:bg-[#d4af37]/30 transition">
+              Nova Rinha (Limpar Tudo)
+          </button>
+          
+          <button id="btn-compartilhar" onclick="compartilharSessao()" class="mt-2 w-full rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
+              🔗 Compartilhar Sessão
+          </button>
+
+          <button id="btn-adicionar-mesa" class="mt-2 w-full py-1 text-[10px] font-bold uppercase tracking-widest text-[#d4af37]/40 hover:text-[#d4af37]/80 transition-colors bg-transparent border-none">
+              + Adicionar Mesa Manual
+          </button>
+      </div>
+
+      <ul id="lista-esquerda" class="max-h-64 lg:max-h-none lg:flex-1 overflow-y-auto p-4 space-y-2">
+      </ul>
+  </aside>
+
+  <main class="flex-1 flex flex-col items-center justify-center p-4 py-10 lg:p-6 relative min-h-[500px]">
+      <header class="text-center mb-4 lg:mb-6">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.5em] text-[#c41e3a]/90">Cassino</p>
+          <h1 class="text-2xl lg:text-3xl font-bold tracking-tight text-[#f5e6c8] mt-1 uppercase">Roleta da Rinha</h1>
+      </header>
+
+      <div id="container-abas-mesas" class="flex flex-wrap justify-center gap-2 mb-6 w-full px-2 oculto">
+          </div>
+
+      <div class="relative mb-8 lg:mb-10">
+          <div class="absolute -top-4 left-1/2 -translate-x-1/2 z-30 w-0 h-0 border-l-[14px] border-r-[14px] border-t-[22px] border-l-transparent border-r-transparent border-t-[#f5e6c8] drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"></div>
+          
+          <div class="p-2 rounded-full shadow-[0_0_0_4px_rgba(212,175,55,0.35),0_0_60px_rgba(196,30,58,0.25)]" style="background: linear-gradient(145deg, #d4af37 0%, #6b5a1e 40%, #2a2410 100%)">
+              <div id="disco-roleta" class="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] lg:w-[340px] lg:h-[340px] rounded-full roleta-girando relative overflow-hidden" style="background: #1c1917">
+              </div>
+          </div>
+      </div>
+
+      <button id="btn-girar" class="rounded-2xl px-8 py-3 lg:px-10 lg:py-4 text-xs lg:text-sm font-bold uppercase tracking-[0.2em] text-[#1a0f0f] transition hover:scale-105" style="background: linear-gradient(180deg, #f0d78c 0%, #d4af37 45%, #8b6914 100%)">
+          Girar roleta
+      </button>
+
+      <div id="modal-vencedor" class="oculto absolute inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-4 fixed">
+          <div class="bg-gradient-to-b from-[#1a150b] to-[#0a0804] border border-[#d4af37]/50 rounded-xl p-8 max-w-sm w-full text-center shadow-[0_0_40px_rgba(212,175,55,0.2)]">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#d4af37] mb-2">Sorteado</p>
+              <h2 id="modal-nome" class="text-3xl lg:text-4xl font-bold text-white mb-1 uppercase tracking-wider">NOME</h2>
+              <p id="modal-jogo" class="text-sm text-[#d4af37]/80 mb-6">Jogo: Nome do Jogo</p>
+              <button id="btn-fechar-modal" class="w-full bg-[#c41e3a] hover:bg-[#a01830] text-white py-3 rounded-lg font-semibold tracking-wider uppercase transition">
+                  Fechar
+              </button>
+          </div>
+      </div>
+
+      <div id="modal-editar" class="oculto absolute inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-4 fixed">
+          <div class="bg-[#0b0f19] border border-[#d4af37]/30 rounded-xl p-6 max-w-xs w-full shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+              <h3 class="text-lg font-bold text-[#f5e6c8] uppercase tracking-widest mb-4">Editar Participante</h3>
+              <div class="space-y-4">
+                  <div>
+                      <label class="text-[10px] font-semibold uppercase text-[#d4af37]/80">Nome</label>
+                      <input type="text" id="edit-nome" class="mt-1 w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none transition-colors">
+                      <p id="erro-nome-edit" class="oculto text-[10px] text-[#c41e3a] font-semibold mt-1 ml-1">Nome idêntico em uso, escolha outro.</p>
+                  </div>
+                  <div>
+                      <label class="text-[10px] font-semibold uppercase text-[#d4af37]/80">Jogo</label>
+                      <input type="text" id="edit-jogo" class="mt-1 w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-[#d4af37] focus:outline-none">
+                  </div>
+                  <div class="flex gap-2 pt-2">
+                      <button id="btn-cancelar-edicao" class="flex-1 bg-transparent border border-white/20 hover:bg-white/10 text-white py-2 rounded font-semibold text-xs uppercase transition">Cancelar</button>
+                      <button id="btn-salvar-edicao" class="flex-1 bg-[#1a3a5f] hover:bg-[#2a5580] text-white py-2 rounded font-semibold text-xs uppercase transition">Confirmar</button>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </main>
+
+  <aside class="w-full lg:w-[320px] border-t lg:border-t-0 lg:border-l border-[#d4af37]/20 bg-[#06080f]/90 flex flex-col z-10 shrink-0">
+      <div class="p-5 border-b border-[#d4af37]/15">
+          <h2 class="text-lg font-semibold text-[#f5e6c8] uppercase tracking-wider">Ranking da Mesa</h2>
+      </div>
+      
+      <div class="px-5 py-5 border-b border-[#d4af37]/20 bg-gradient-to-b from-[#d4af37]/10 to-transparent flex flex-col items-center">
+          <p class="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#d4af37]/90 text-center">Prêmio Total (Mesa)</p>
+          <p id="texto-premio-total" class="mt-1 text-3xl font-bold tabular-nums text-[#e8c547] drop-shadow-[0_0_24px_rgba(212,175,55,0.35)]">
+              R$ 0,00
+          </p>
+      </div>
+
+      <div class="p-4 border-b border-[#d4af37]/15 bg-[#04060c]/80">
+          <label class="block text-[10px] font-semibold uppercase tracking-wider text-[#d4af37]/80 mb-1.5">Pesquisar Usuário</label>
+          <input type="search" id="input-pesquisa" placeholder="Nome, jogo..." autocomplete="off"
+              class="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white focus:border-[#d4af37]/50 focus:outline-none">
+      </div>
+
+      <div id="painel-admin-valor" class="oculto bg-[#111827] border-b border-[#d4af37]/20 p-4 shadow-inner">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-[#d4af37]/80 mb-2">Novo Valor (R$) — <span id="admin-nome-jogador" class="text-white"></span></p>
+          <div class="flex gap-2">
+              <input type="number" id="input-valor" placeholder="0.00" step="0.01" class="w-full rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-sm text-white focus:border-[#d4af37]/50 focus:outline-none">
+              <button id="btn-salvar-valor" class="bg-green-700 hover:bg-green-600 text-white px-4 rounded-lg text-xs font-bold uppercase transition">
+                  Salvar
+              </button>
+          </div>
+      </div>
+
+      <ul id="lista-ranking" class="max-h-64 lg:max-h-none lg:flex-1 overflow-y-auto p-4 space-y-2">
+      </ul>
+  </aside>
+</div>
+
+<script>
+// ==========================================
+// 1. PERSISTÊNCIA, NAVEGAÇÃO E SUPABASE
+// ==========================================
+
+// --- SUBSTITUA AQUI A SUA CHAVE PUBLICA DO SUPABASE ---
+const supabaseUrl = 'https://dinogrfsjttfebfyianq.supabase.co'; 
+const supabaseKey = 'COLE_A_SUA_CHAVE_AQUI'; 
+// ------------------------------------------------------
+
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+let appData = JSON.parse(localStorage.getItem('banca_master_data')) || { listas: [], listaAtivaId: null };
+
+function registrarTelaAtiva(tela) {
+  localStorage.setItem('telaAtiva', tela);
+}
+
+function inicializarApp() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('s')) {
+    receberSessaoSupabase(urlParams.get('s'));
+    return;
+  }
+
+  const telaSalva = localStorage.getItem('telaAtiva');
+
+  if (telaSalva === 'roleta') {
+    carregarDadosRoleta();
+    abrirRoletaLivre(true);
+  } else if (telaSalva === 'banca' && appData.listaAtivaId && getListaAtiva()) {
+    abrirTelaLista(true);
+  } else {
+    abrirTelaInicial(true);
+  }
+}
+
+// ----------------------------------------------------
+// SISTEMA DE PARTILHA VIA SUPABASE
+// ----------------------------------------------------
+async function compartilharSessao() {
+  const senha = prompt("🔒 Crie uma palavra-passe de acesso para partilhar esta sessão:");
+  if (!senha) return;
+
+  const btn = document.getElementById('btn-compartilhar');
+  const textoOriginal = btn.innerHTML;
+  btn.innerHTML = "⏳ A gerar link...";
+  btn.disabled = true;
+
+  try {
+    const dadosDaRoleta = { rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas };
+    const jsonString = JSON.stringify(dadosDaRoleta);
+    const dadosCriptografados = CryptoJS.AES.encrypt(jsonString, senha).toString();
+
+    const shortId = Math.random().toString(36).substring(2, 8);
+
+    const { error } = await supabase
+      .from('sessoes_roleta')
+      .insert([{ id: shortId, dados: dadosCriptografados }]);
+
+    if (error) throw error;
+
+    const linkCompartilhavel = window.location.origin + window.location.pathname + "?s=" + shortId;
+
+    navigator.clipboard.writeText(linkCompartilhavel).then(() => {
+      alert("✅ Sessão guardada na nuvem!\n\nLink curto COPIADO:\n" + linkCompartilhavel + "\n\nEnvie este link e a palavra-passe para as pessoas.");
+    }).catch(() => {
+      prompt("Sessão guardada! Copie o link abaixo manualmente e envie com a palavra-passe:", linkCompartilhavel);
+    });
+
+  } catch (err) {
+    alert("❌ Erro ao comunicar com o servidor: " + err.message);
+  } finally {
+    btn.innerHTML = textoOriginal;
+    btn.disabled = false;
+  }
+}
+
+async function receberSessaoSupabase(shortId) {
+  const senha = prompt("🔒 Digite a palavra-passe para aceder a esta sessão:");
+  
+  if (senha === null) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    inicializarApp();
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('sessoes_roleta')
+      .select('dados')
+      .eq('id', shortId)
+      .single();
+
+    if (error || !data) throw new Error("Sessão não encontrada. O link pode estar incorreto.");
+
+    const bytesDecriptados = CryptoJS.AES.decrypt(data.dados, senha);
+    const textoDecriptado = bytesDecriptados.toString(CryptoJS.enc.Utf8);
+
+    if (!textoDecriptado) throw new Error("Palavra-passe incorreta.");
+
+    const dadosCarregados = JSON.parse(textoDecriptado);
+
+    rankingGlobal = dadosCarregados.rankingGlobal || [];
+    participantesRoleta = dadosCarregados.participantesRoleta || [];
+    corAtualIndex = dadosCarregados.corAtualIndex || 0;
+    mesaAtivaId = dadosCarregados.mesaAtivaId || 1;
+    totalMesasConfiguradas = dadosCarregados.totalMesasConfiguradas || 1;
+
+    salvarDadosRoleta();
+    alert("✅ Sessão importada com sucesso! Bem-vindo(a).");
+    
+    window.history.replaceState({}, document.title, window.location.pathname);
+    abrirRoletaLivre(true);
+
+  } catch (erro) {
+    alert("❌ Falha no acesso: " + erro.message);
+    receberSessaoSupabase(shortId); 
+  }
+}
+
+function salvarBanca() { localStorage.setItem('banca_master_data', JSON.stringify(appData)); }
+
+function abrirTelaInicial(init = false) {
+  registrarTelaAtiva('inicial');
+  document.getElementById('tela-lista').classList.add('hidden');
+  document.getElementById('roleta-wrapper').classList.add('hidden');
+  document.getElementById('banca-wrapper').classList.remove('hidden');
+  document.getElementById('tela-inicial').classList.remove('hidden');
+  appData.listaAtivaId = null;
+  salvarBanca(); renderizarHistorico();
+}
+
+function abrirTelaLista(init = false) {
+  registrarTelaAtiva('banca');
+  document.getElementById('tela-inicial').classList.add('hidden');
+  document.getElementById('roleta-wrapper').classList.add('hidden');
+  document.getElementById('banca-wrapper').classList.remove('hidden');
+  document.getElementById('tela-lista').classList.remove('hidden');
+  renderizarListaAtual();
+}
+
+function voltarAoInicio() { abrirTelaInicial(); }
+
+function abrirRoletaLivre(init = false) {
+  registrarTelaAtiva('roleta');
+  document.getElementById('banca-wrapper').classList.add('hidden');
+  document.getElementById('roleta-wrapper').classList.remove('hidden');
+  if(!init) carregarDadosRoleta();
+  atualizarInterfaceRoleta();
+}
+
+function voltarDaRoletaParaBanca() { abrirTelaInicial(); }
+
+// ----------------------------------------------------
+// SISTEMA DE MODAL PARA DIVISÃO DE MESAS (BANCA -> ROLETA)
+// ----------------------------------------------------
+function abrirModalSorteio() {
+  const lista = getListaAtiva();
+  if(!lista || lista.participantes.length === 0) { alert("Adicione participantes na banca antes de sortear!"); return; }
+  document.getElementById('msg-participantes-modal').innerText = `Você tem ${lista.participantes.length} participante(s) nesta banca.`;
+  document.getElementById('input-qtd-mesas').value = '1';
+  document.getElementById('erro-mesas').classList.add('hidden');
+  document.getElementById('modal-sorteio').classList.remove('hidden');
+}
+
+function fecharModalSorteio() { document.getElementById('modal-sorteio').classList.add('hidden'); }
+
+function confirmarSorteio() {
+  const lista = getListaAtiva();
+  let qtdMesas = parseInt(document.getElementById('input-qtd-mesas').value);
+  let totalParticipantes = lista.participantes.length;
+
+  if (isNaN(qtdMesas) || qtdMesas < 1) { exibirErroModal("Insira um número válido (mínimo 1 mesa)."); return; }
+  if (qtdMesas > totalParticipantes) { exibirErroModal(`Erro: Você não tem participantes suficientes para dividir em ${qtdMesas} mesas.`); return; }
+
+  fecharModalSorteio();
+  executarExportacaoDivisao(lista, qtdMesas, totalParticipantes);
+}
+
+function exibirErroModal(msg) {
+  const erroEl = document.getElementById('erro-mesas');
+  erroEl.innerText = msg;
+  erroEl.classList.remove('hidden');
+}
+
+function executarExportacaoDivisao(lista, qtdMesas, totalParticipantes) {
+  if(confirm(`Iniciar a Roleta dividida em ${qtdMesas} mesa(s)? (Os dados da roleta atual serão apagados)`)) {
+    rankingGlobal = [];
+    participantesRoleta = [];
+    corAtualIndex = 0;
+    mesaAtivaId = 1; 
+    totalMesasConfiguradas = qtdMesas; 
+    
+    let tamanhoBase = Math.floor(totalParticipantes / qtdMesas);
+    let sobra = totalParticipantes % qtdMesas;
+
+    let mesaAtualDivisao = 1;
+    let contadorNaMesaAtual = 0;
+    let limiteMesaAtual = tamanhoBase + sobra; 
+
+    lista.participantes.forEach((p, index) => {
+      const novoJogador = {
+        id: Date.now() + index,
+        nome: p.nome,
+        jogo: p.slot || "Sem Slot",
+        cor: paletaCores[corAtualIndex % paletaCores.length],
+        valorGanho: 0,
+        mesa: mesaAtualDivisao
+      };
+      corAtualIndex++;
+      rankingGlobal.push(novoJogador);
+      participantesRoleta.push(novoJogador);
+
+      contadorNaMesaAtual++;
+      if (contadorNaMesaAtual >= limiteMesaAtual && mesaAtualDivisao < qtdMesas) {
+        mesaAtualDivisao++;
+        contadorNaMesaAtual = 0;
+        limiteMesaAtual = tamanhoBase;
+      }
+    });
+
+    salvarDadosRoleta();
+    abrirRoletaLivre();
+  }
+}
+
+// ==========================================
+// 2. LÓGICA DA BANCA
+// ==========================================
+function criarNovaLista() {
+  const nomeInput = document.getElementById('nova-banca-nome');
+  const valorInput = document.getElementById('nova-banca-valor');
+  let nome = nomeInput.value.trim();
+  let valorStr = valorInput.value.trim();
+
+  if (!valorStr) { alert("O valor da banca é obrigatório."); valorInput.focus(); return; }
+  let valorNum = parseFloat(valorStr.replace(',', '.'));
+  if (isNaN(valorNum) || valorNum <= 0) { alert("Por favor, insira um valor numérico válido."); valorInput.focus(); return; }
+  if (nome === "") { nome = "Banca #" + (appData.listas.length + 1); }
+
+  const novaLista = { id: Date.now().toString(), nome: nome, valor: valorNum, participantes: [] };
+  appData.listas.push(novaLista);
+  appData.listaAtivaId = novaLista.id;
+  nomeInput.value = ''; valorInput.value = '20';
+  salvarBanca(); abrirTelaLista();
+}
+
+function carregarLista(id) { appData.listaAtivaId = id; salvarBanca(); abrirTelaLista(); }
+
+function apagarLista(id) {
+  if(confirm("Tem certeza que deseja excluir esta banca inteira?")) {
+    appData.listas = appData.listas.filter(l => l.id !== id);
+    salvarBanca(); renderizarHistorico();
+  }
+}
+
+function renderizarHistorico() {
+  const container = document.getElementById('container-historico');
+  container.innerHTML = '';
+  if (appData.listas.length === 0) { container.innerHTML = '<p style="text-align:center; color:#666;">Nenhuma banca criada ainda.</p>'; return; }
+
+  appData.listas.slice().reverse().forEach(lista => {
+    const card = document.createElement('div');
+    card.className = 'card-historico';
+    card.innerHTML = `
+      <div class="info-historico">
+        <h3>${lista.nome}</h3>
+        <p>${lista.participantes.length} participantes • R$${lista.valor}</p>
+      </div>
+      <div class="acoes-historico">
+        <button class="btn-apagar-lista" onclick="apagarLista('${lista.id}')">🗑️</button>
+        <button class="btn-entrar" onclick="carregarLista('${lista.id}')">Entrar</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function adicionar() {
+  const lista = getListaAtiva();
+  if(!lista) return;
+
+  const nomeInput = document.getElementById('nome');
+  const slotInput = document.getElementById('slot');
+  const nome = nomeInput.value;
+  const slot = slotInput.value;
+  
+  if (!nome) return alert('Digite o nome do participante.');
+
+  lista.participantes.push({ nome, slot: slot, pago: false });
+  nomeInput.value = ''; slotInput.value = ''; nomeInput.focus();
+  
+  salvarBanca(); renderizarListaAtual();
+  document.getElementById('busca').value = ''; filtrarLista();
+}
+
+function editarSlot(index) {
+  const lista = getListaAtiva();
+  const novoSlot = prompt('Novo slot para ' + lista.participantes[index].nome + ':', lista.participantes[index].slot || '');
+  if (novoSlot === null) return;
+  lista.participantes[index].slot = novoSlot;
+  salvarBanca(); renderizarListaAtual();
+}
+
+function togglePago(index) {
+  const lista = getListaAtiva();
+  lista.participantes[index].pago = !lista.participantes[index].pago;
+  salvarBanca(); renderizarListaAtual();
+}
+
+function remover(index) {
+  const lista = getListaAtiva();
+  if (!confirm('Remover ' + lista.participantes[index].nome + '?')) return;
+  lista.participantes.splice(index, 1);
+  salvarBanca(); renderizarListaAtual();
+}
+
+function filtrarLista() {
+  const buscaTermo = document.getElementById('busca').value.toLowerCase();
+  const cards = document.getElementById('lista').getElementsByClassName('card');
+  Array.from(cards).forEach(card => {
+    const nome = card.getAttribute('data-nome').toLowerCase();
+    const slot = card.getAttribute('data-slot').toLowerCase();
+    card.style.display = (nome.includes(buscaTermo) || slot.includes(buscaTermo)) ? "" : "none";
+  });
+}
+
+function renderizarListaAtual() {
+  const listaAtual = getListaAtiva();
+  if(!listaAtual) return;
+
+  document.getElementById('nome-lista-atual').innerText = listaAtual.nome;
+  document.getElementById('titulo-adicionar').innerText = `Adicionar Participante (R$${listaAtual.valor})`;
+
+  const total = listaAtual.participantes.length;
+  const pagosCount = listaAtual.participantes.filter(p => p.pago).length;
+  const restante = (total - pagosCount) * listaAtual.valor;
+
+  document.getElementById('resumo-total').innerText = total;
+  document.getElementById('resumo-pagos').innerText = pagosCount;
+  document.getElementById('resumo-restante').innerText = 'R$' + restante;
+
+  const divLista = document.getElementById('lista');
+  divLista.innerHTML = '';
+
+  listaAtual.participantes.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.setAttribute('data-nome', p.nome);
+    div.setAttribute('data-slot', p.slot || '');
+    div.className = 'card ' + (p.pago ? 'pago-ativo' : '');
+
+    div.innerHTML = `
+      <div class="linha-participante">
+        <div>
+          <span class="nome-participante">${p.nome}</span>
+          <div class="slot-info">
+            <span>${p.slot ? p.slot : 'Sem slot'}</span>
+            <button class="btn-editar-slot" onclick="editarSlot(${i})">✏️</button>
+          </div>
+        </div>
+        <div class="acoes-participante">
+          <button class="btn-toggle-pago" onclick="togglePago(${i})">✔</button>
+          <button class="btn-remover" onclick="remover(${i})">✖</button>
+        </div>
+      </div>
+      <div class="linha-status">
+        <span>R$${listaAtual.valor}</span>
+        <span class="status-badge">${p.pago ? '🟢 Pago' : '🔴 Não pago'}</span>
+      </div>
+    `;
+    divLista.appendChild(div);
+  });
+}
+
+function copiarLista() {
+  const listaAtual = getListaAtiva();
+  if(!listaAtual) return;
+  let texto = '';
+  listaAtual.participantes.forEach(p => {
+    texto += `${p.nome}\nSlot: ${p.slot ? p.slot : 'Sem slot'}\nR$ ${listaAtual.valor}:${p.pago ? '✅' : '❌'}\n━━━━━\n`;
+  });
+  if (navigator.share) { navigator.share({ title: listaAtual.nome, text: texto }).catch(()=>{}); } 
+  else if (navigator.clipboard) { navigator.clipboard.writeText(texto).then(() => alert('Copiado!')).catch(() => alert('Erro.')); }
+}
+
+// ==========================================
+// 3. LÓGICA DA ROLETA (COM MESAS)
+// ==========================================
+let rankingGlobal = []; 
+let participantesRoleta = []; 
+let corAtualIndex = 0;
+let rotacaoAtual = 0;
+let mesaAtivaId = 1; 
+let totalMesasConfiguradas = 1; 
+
+let jogadorSorteadoDaVez = null; 
+let jogadorEditandoId = null;    
+let jogadorRecebendoValorId = null; 
+
+const paletaCores = ['#991b1b', '#5b21b6', '#065f46', '#b45309', '#1e3a8a', '#86198f', '#0f766e', '#b91c1c'];
+
+function salvarDadosRoleta() {
+  const dadosParaSalvar = { rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas };
+  localStorage.setItem('dadosRinha', JSON.stringify(dadosParaSalvar));
+}
+
+function carregarDadosRoleta() {
+  const dadosSalvos = localStorage.getItem('dadosRinha');
+  if (dadosSalvos) {
+      const dados = JSON.parse(dadosSalvos);
+      rankingGlobal = dados.rankingGlobal || [];
+      participantesRoleta = dados.participantesRoleta || [];
+      corAtualIndex = dados.corAtualIndex || 0;
+      mesaAtivaId = dados.mesaAtivaId || 1;
+      totalMesasConfiguradas = dados.totalMesasConfiguradas || 1;
+  }
+}
+
+function getParticipantesDaMesa() { return participantesRoleta.filter(p => p.mesa === mesaAtivaId); }
+function getRankingDaMesa() { return rankingGlobal.filter(p => p.mesa === mesaAtivaId); }
+
+const btnNovaRinha = document.getElementById('btn-nova-rinha');
+const inputPesquisa = document.getElementById('input-pesquisa');
+const inputNomeAdd = document.getElementById('input-nome');
+const erroNomeAdd = document.getElementById('erro-nome-add');
+const inputNomeEdit = document.getElementById('edit-nome');
+const erroNomeEdit = document.getElementById('erro-nome-edit');
+
+inputNomeAdd.addEventListener('input', () => { erroNomeAdd.classList.add('oculto'); inputNomeAdd.classList.remove('border-[#c41e3a]'); });
+inputNomeEdit.addEventListener('input', () => { erroNomeEdit.classList.add('oculto'); inputNomeEdit.classList.remove('border-[#c41e3a]'); });
+
+btnNovaRinha.addEventListener('click', () => {
+  if(confirm("Deseja realmente apagar todos os dados e iniciar uma Nova Rinha?")) {
+      rankingGlobal = []; participantesRoleta = []; corAtualIndex = 0; jogadorSorteadoDaVez = null; 
+      mesaAtivaId = 1; totalMesasConfiguradas = 1; 
+      document.getElementById('painel-admin-valor').classList.add('oculto'); inputPesquisa.value = '';
+      erroNomeAdd.classList.add('oculto'); inputNomeAdd.classList.remove('border-[#c41e3a]');
+      salvarDadosRoleta(); atualizarInterfaceRoleta();
+  }
+});
+
+document.getElementById('btn-adicionar-mesa').addEventListener('click', () => {
+  totalMesasConfiguradas++;
+  mesaAtivaId = totalMesasConfiguradas;
+  salvarDadosRoleta();
+  atualizarInterfaceRoleta();
+});
+
+document.getElementById('form-participante').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const nome = inputNomeAdd.value.trim();
+  const jogo = document.getElementById('input-jogo').value.trim();
+
+  if (nome && jogo) {
+      const nomeJaExiste = getRankingDaMesa().some(j => j.nome.toLowerCase() === nome.toLowerCase());
+      if (nomeJaExiste) { erroNomeAdd.classList.remove('oculto'); inputNomeAdd.classList.add('border-[#c41e3a]'); return; }
+
+      const novoJogador = { 
+        id: Date.now(), nome: nome, jogo: jogo, cor: paletaCores[corAtualIndex % paletaCores.length], valorGanho: 0, mesa: mesaAtivaId 
+      };
+      corAtualIndex++;
+      rankingGlobal.push(novoJogador); participantesRoleta.push(novoJogador);
+
+      inputNomeAdd.value = ''; document.getElementById('input-jogo').value = '';
+      salvarDadosRoleta(); atualizarInterfaceRoleta();
+  }
+});
+
+function atualizarInterfaceRoleta() {
+  renderizarAbasMesas(); renderizarListaEsquerda(); renderizarRoleta(); renderizarListaRanking(inputPesquisa.value.trim()); calcularPremioTotal();
+}
+
+function renderizarAbasMesas() {
+  const container = document.getElementById('container-abas-mesas');
+  
+  if (totalMesasConfiguradas <= 1) { container.classList.add('oculto'); return; }
+
+  container.classList.remove('oculto');
+  container.innerHTML = '';
+
+  for (let i = 1; i <= totalMesasConfiguradas; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = `Mesa ${i}`;
+    btn.className = `px-4 py-2 text-xs font-bold uppercase rounded-lg transition border ${
+      mesaAtivaId === i ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-transparent text-[#d4af37] border-[#d4af37]/50 hover:bg-[#d4af37]/10'
+    }`;
+    btn.onclick = () => { mesaAtivaId = i; salvarDadosRoleta(); atualizarInterfaceRoleta(); };
+    container.appendChild(btn);
+  }
+}
+
+function renderizarListaEsquerda() {
+  const listaEsquerda = document.getElementById('lista-esquerda');
+  listaEsquerda.innerHTML = '';
+  const participantesDaMesa = getParticipantesDaMesa();
+
+  if (participantesDaMesa.length === 0) {
+      listaEsquerda.innerHTML = `<li class="rounded-lg border border-dashed border-white/15 px-4 py-8 text-center text-sm text-white/40">Mesa vazia. Adicione participantes.</li>`; return;
+  }
+  participantesDaMesa.forEach((jogador, index) => {
+      const li = document.createElement('li');
+      li.className = 'flex items-center justify-between rounded-lg border border-white/10 bg-black/40 px-3 py-2';
+      li.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+              <span class="text-[10px] font-bold text-[#d4af37] bg-[#d4af37]/10 px-2 py-1 rounded min-w-[24px] text-center">${index + 1}</span>
+              <div class="truncate">
+                  <p class="text-sm font-bold text-white truncate">${jogador.nome}</p>
+                  <p class="text-[10px] text-white/50 truncate">${jogador.jogo}</p>
+              </div>
+          </div>
+          <div class="flex items-center gap-2 ml-2 shrink-0">
+              <button onclick="abrirModalEdicao(${jogador.id})" class="text-white/40 hover:text-[#d4af37] transition p-1" title="Editar"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+              <button onclick="deletarParticipante(${jogador.id})" class="text-white/40 hover:text-red-500 transition p-1" title="Excluir"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+              <div class="w-4 h-4 rounded shadow-inner ml-1" style="background-color: ${jogador.cor}"></div>
+          </div>
+      `;
+      listaEsquerda.appendChild(li);
+  });
+}
+
+window.deletarParticipante = function(id) {
+  rankingGlobal = rankingGlobal.filter(j => j.id !== id); 
+  participantesRoleta = participantesRoleta.filter(j => j.id !== id);
+  salvarDadosRoleta(); atualizarInterfaceRoleta();
+}
+
+window.abrirModalEdicao = function(id) {
+  const jogador = participantesRoleta.find(j => j.id === id);
+  if(jogador) {
+      jogadorEditandoId = id; inputNomeEdit.value = jogador.nome; document.getElementById('edit-jogo').value = jogador.jogo;
+      erroNomeEdit.classList.add('oculto'); inputNomeEdit.classList.remove('border-[#c41e3a]');
+      document.getElementById('modal-editar').classList.remove('oculto');
+  }
+}
+
+document.getElementById('btn-cancelar-edicao').addEventListener('click', () => { document.getElementById('modal-editar').classList.add('oculto'); erroNomeEdit.classList.add('oculto'); inputNomeEdit.classList.remove('border-[#c41e3a]'); });
+
+document.getElementById('btn-salvar-edicao').addEventListener('click', () => {
+  const novoNome = inputNomeEdit.value.trim(); const novoJogo = document.getElementById('edit-jogo').value.trim();
+  if(novoNome && novoJogo && jogadorEditandoId) {
+      const nomeJaExiste = getRankingDaMesa().some(j => j.nome.toLowerCase() === novoNome.toLowerCase() && j.id !== jogadorEditandoId);
+      if (nomeJaExiste) { erroNomeEdit.classList.remove('oculto'); inputNomeEdit.classList.add('border-[#c41e3a]'); return; }
+      let jRoleta = participantesRoleta.find(j => j.id === jogadorEditandoId); let jGlobal = rankingGlobal.find(j => j.id === jogadorEditandoId);
+      if(jRoleta) { jRoleta.nome = novoNome; jRoleta.jogo = novoJogo; } if(jGlobal) { jGlobal.nome = novoNome; jGlobal.jogo = novoJogo; }
+      document.getElementById('modal-editar').classList.add('oculto'); salvarDadosRoleta(); atualizarInterfaceRoleta();
+  }
+});
+
+function renderizarRoleta() {
+  const disco = document.getElementById('disco-roleta');
+  disco.innerHTML = '<div class="absolute left-1/2 top-1/2 z-20 h-6 w-6 sm:h-8 sm:w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#d4af37]/40 bg-gradient-to-b from-[#121a2a] to-[#07090f] shadow-lg"></div>';
+  const participantesDaMesa = getParticipantesDaMesa();
+
+  if (participantesDaMesa.length === 0) { disco.style.background = '#1c1917'; return; }
+
+  let fatias = []; let anguloPorPessoa = 360 / participantesDaMesa.length;
+  participantesDaMesa.forEach((jogador, index) => {
+      let inicio = anguloPorPessoa * index; let fim = anguloPorPessoa * (index + 1);
+      fatias.push(`${jogador.cor} ${inicio}deg ${fim}deg`);
+  });
+  disco.style.background = `conic-gradient(${fatias.join(', ')})`;
+
+  if (participantesDaMesa.length === 1) {
+      let span = document.createElement('div');
+      span.className = "absolute inset-0 flex items-center justify-center text-white font-bold tracking-widest uppercase z-10 texto-roleta text-lg sm:text-xl";
+      span.textContent = participantesDaMesa[0].nome; disco.appendChild(span);
+  } else {
+      participantesDaMesa.forEach((jogador, index) => {
+          let anguloMeioConic = (anguloPorPessoa * index) + (anguloPorPessoa / 2); let anguloCSS = anguloMeioConic - 90;
+          let divContainer = document.createElement('div');
+          divContainer.className = "absolute top-[50%] left-[50%] w-[50%] h-8 mt-[-16px] origin-left z-10 flex items-center justify-end pr-4 sm:pr-6";
+          divContainer.style.transform = `rotate(${anguloCSS}deg)`;
+          let nomeSpan = document.createElement('span');
+          let tamanhoTexto = participantesDaMesa.length > 8 ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-xs';
+          nomeSpan.className = `texto-roleta text-white font-bold uppercase tracking-widest ${tamanhoTexto} block`;
+          nomeSpan.textContent = jogador.nome;
+          let anguloNormalizado = ((anguloCSS % 360) + 360) % 360;
+          if (anguloNormalizado > 90 && anguloNormalizado < 270) { nomeSpan.style.transform = "rotate(180deg)"; nomeSpan.style.display = "inline-block"; }
+          divContainer.appendChild(nomeSpan); disco.appendChild(divContainer);
+      });
+  }
+}
+
+inputPesquisa.addEventListener('input', (e) => { renderizarListaRanking(e.target.value.toLowerCase()); });
+
+function renderizarListaRanking(termoPesquisa = '') {
+  const listaRanking = document.getElementById('lista-ranking'); listaRanking.innerHTML = '';
+  let listaFiltrada = [...getRankingDaMesa()];
+  
+  if (termoPesquisa !== '') { listaFiltrada = listaFiltrada.filter(j => j.nome.toLowerCase().includes(termoPesquisa) || j.jogo.toLowerCase().includes(termoPesquisa)); }
+  listaFiltrada.sort((a, b) => b.valorGanho - a.valorGanho);
+  if (listaFiltrada.length === 0) { listaRanking.innerHTML = `<li class="rounded-lg border border-dashed border-white/15 px-4 py-8 text-center text-sm text-white/40">Nenhum usuário encontrado na mesa.</li>`; return; }
+
+  listaFiltrada.forEach((jogador, index) => {
+      const li = document.createElement('li');
+      li.className = 'flex items-center gap-3 rounded-lg border border-white/10 bg-[#0a0e18] px-3 py-3 cursor-pointer hover:bg-[#111827] transition border-l-4 border-l-transparent hover:border-l-[#d4af37]';
+      li.onclick = () => prepararPainelValor(jogador.id);
+      li.innerHTML = `
+          <div class="flex items-center justify-center w-8 h-8 rounded bg-[#d4af37] text-black font-bold text-sm shrink-0">${index + 1}</div>
+          <div class="overflow-hidden">
+              <p class="text-sm font-bold text-white truncate">${jogador.nome} <span class="text-xs font-normal text-white/50">· ${jogador.jogo}</span></p>
+              <p class="text-xs font-semibold text-[#e8c547] mt-0.5">R$ ${jogador.valorGanho.toFixed(2).replace('.', ',')}</p>
+          </div>
+      `;
+      listaRanking.appendChild(li);
+  });
+}
+
+function calcularPremioTotal() {
+  let totalMesa = getRankingDaMesa().reduce((soma, j) => soma + j.valorGanho, 0);
+  document.getElementById('texto-premio-total').textContent = `R$ ${totalMesa.toFixed(2).replace('.', ',')}`;
+}
+
+function prepararPainelValor(id) {
+  const jogador = rankingGlobal.find(j => j.id === id);
+  if(jogador) {
+      jogadorRecebendoValorId = id; document.getElementById('admin-nome-jogador').textContent = `${jogador.nome} · ${jogador.jogo}`;
+      document.getElementById('input-valor').value = ''; document.getElementById('painel-admin-valor').classList.remove('oculto');
+      inputPesquisa.value = ''; renderizarListaRanking();
+      if(window.innerWidth < 1024) { document.getElementById('painel-admin-valor').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  }
+}
+
+document.getElementById('btn-salvar-valor').addEventListener('click', () => {
+  const inputVal = document.getElementById('input-valor'); const valorInformado = parseFloat(inputVal.value.replace(',', '.'));
+  if (!isNaN(valorInformado) && valorInformado >= 0 && jogadorRecebendoValorId) {
+      const jogador = rankingGlobal.find(j => j.id === jogadorRecebendoValorId);
+      if (jogador) { jogador.valorGanho += valorInformado; }
+      document.getElementById('painel-admin-valor').classList.add('oculto'); jogadorRecebendoValorId = null;
+      salvarDadosRoleta(); atualizarInterfaceRoleta();
+  } else { alert("Insira um valor válido."); }
+});
+
+document.getElementById('btn-girar').addEventListener('click', () => {
+  const participantesDaMesa = getParticipantesDaMesa();
+  if (participantesDaMesa.length === 0) return alert("Adicione participantes na mesa!");
+  
+  const btn = document.getElementById('btn-girar'); btn.disabled = true; btn.style.opacity = '0.5';
+
+  const indiceVencedor = Math.floor(Math.random() * participantesDaMesa.length);
+  jogadorSorteadoDaVez = participantesDaMesa[indiceVencedor];
+
+  const anguloPorPessoa = 360 / participantesDaMesa.length; const centroFatia = (indiceVencedor * anguloPorPessoa) + (anguloPorPessoa / 2);
+  const giroParaTopo = 360 - centroFatia; const voltasExtras = (Math.floor(Math.random() * 4) + 5) * 360;
+  const rotacaoBase = rotacaoAtual + (360 - (rotacaoAtual % 360));
+  rotacaoAtual = rotacaoBase + voltasExtras + giroParaTopo;
+  
+  document.getElementById('disco-roleta').style.transform = `rotate(${rotacaoAtual}deg)`;
+
+  setTimeout(() => {
+      document.getElementById('modal-nome').textContent = jogadorSorteadoDaVez.nome;
+      document.getElementById('modal-jogo').textContent = `Jogo: ${jogadorSorteadoDaVez.jogo}`;
+      document.getElementById('modal-vencedor').classList.remove('oculto');
+      btn.disabled = false; btn.style.opacity = '1';
+  }, 4000);
+});
+
+document.getElementById('btn-fechar-modal').addEventListener('click', () => {
+  document.getElementById('modal-vencedor').classList.add('oculto');
+  participantesRoleta = participantesRoleta.filter(j => j.id !== jogadorSorteadoDaVez.id);
+  prepararPainelValor(jogadorSorteadoDaVez.id);
+  salvarDadosRoleta(); atualizarInterfaceRoleta();
+});
+
+// START
+window.addEventListener('load', inicializarApp);
+
+</script>
+</body>
+</html>
