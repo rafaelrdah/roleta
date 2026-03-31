@@ -54,7 +54,7 @@
     }
     .input-minimal:focus { outline: none; border-color: var(--cor-destaque); }
 
-    /* Modal Customizado (Gerenciador) */
+    /* Modais Customizados */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center; z-index: 999;
@@ -88,9 +88,10 @@
     .btn-entrar { background-color: var(--cor-destaque); color: white; padding: 8px 16px; }
     .btn-apagar-lista { background-color: transparent; color: var(--cor-nao-pago); border: 1px solid var(--cor-nao-pago); padding: 8px; }
 
-    /* --- TELA DA LISTA (BANCA) --- */
-    #tela-lista { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; }
-    #tela-lista header { background-color: var(--bg-card); padding: 12px 16px; border-bottom: 1px solid var(--bg-input); position: sticky; top: 0; z-index: 100; }
+    /* --- TELA DA LISTA (BANCA) - FLEXBOX CORRIGIDO --- */
+    #tela-lista { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
+    
+    #tela-lista header { background-color: var(--bg-card); padding: 12px 16px; border-bottom: 1px solid var(--bg-input); flex-shrink: 0; z-index: 10; }
     .header-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;}
     .titulo-lista { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;}
     .btn-voltar { background: none; color: var(--cor-destaque); font-size: 20px; padding: 0 8px; }
@@ -105,9 +106,10 @@
     .resumo-pago { color: var(--cor-pago); }
     .resumo-pendente { color: var(--cor-nao-pago); }
 
-    .container-pesquisa { background-color: var(--bg-card); padding: 8px 16px; position: sticky; top: 95px; z-index: 99; }
+    .container-pesquisa { background-color: var(--bg-card); padding: 8px 16px; flex-shrink: 0; border-bottom: 1px solid var(--bg-puro); z-index: 10; }
     #busca { width: 100%; background-color: var(--bg-input); color: var(--txt-primario); border: 1px solid transparent; padding: 10px; border-radius: 10px; box-sizing: border-box; }
-    #lista { flex: 1; overflow-y: auto; padding: 10px 16px 140px 16px; }
+    
+    #lista { flex: 1; overflow-y: auto; padding: 10px 16px 20px 16px; }
 
     .card { background-color: var(--bg-card); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
     .linha-participante { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
@@ -124,7 +126,7 @@
     .status-badge { font-weight: 600; color: var(--cor-nao-pago); }
     .card.pago-ativo .status-badge { color: var(--cor-pago); }
 
-    #painel-adicionar { background-color: var(--bg-card); border-top: 1px solid var(--bg-input); padding: 12px 16px; position: fixed; bottom: 0; width: 100%; box-sizing: border-box; z-index: 101; }
+    #painel-adicionar { background-color: var(--bg-card); border-top: 1px solid var(--bg-input); padding: 12px 16px; width: 100%; box-sizing: border-box; flex-shrink: 0; z-index: 10; }
     #painel-adicionar h2 { font-size: 14px; color: var(--txt-secundario); margin-bottom: 8px; }
     .input-col { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
     .btn-adicionar { width: 100%; background-color: #166534; color: white; padding: 12px; font-weight: 600; font-size: 15px; }
@@ -204,24 +206,6 @@
       <button class="btn-adicionar" onclick="adicionar()">➕ Adicionar</button>
     </div>
   </div>
-
-  <div id="modal-sorteio" class="modal-overlay hidden">
-    <div class="modal-box">
-      <h3>Preparar Sorteio</h3>
-      <p id="msg-participantes-modal">Você tem X participantes nesta banca.</p>
-      
-      <label style="font-size: 12px; color: var(--txt-secundario); display: block; margin-bottom: 6px; text-transform: uppercase; font-weight: bold;">Dividir em quantas mesas?</label>
-      <input type="number" id="input-qtd-mesas" class="input-minimal" style="text-align: center; font-size: 18px; font-weight: bold;" value="1" min="1">
-      
-      <p id="erro-mesas" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
-      
-      <div class="modal-acoes">
-        <button class="btn-modal-cancelar" onclick="fecharModalSorteio()">Cancelar</button>
-        <button class="btn-modal-confirmar" onclick="confirmarSorteio()">Confirmar</button>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <div id="roleta-wrapper" class="hidden flex flex-col lg:flex-row h-[100dvh] w-full bg-gradient-to-b from-[#0a0e18] to-[#05070d] text-white font-sans overflow-y-auto lg:overflow-hidden overflow-x-hidden">
@@ -262,7 +246,7 @@
               Nova Rinha
           </button>
           
-          <button id="btn-compartilhar" onclick="compartilharSessao()" class="mt-2 w-full rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
+          <button onclick="abrirModalCompartilhar()" class="mt-2 w-full rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
               🔗 Compartilhar Sessão
           </button>
 
@@ -359,6 +343,70 @@
   </aside>
 </div>
 
+<div id="modal-sorteio" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Preparar Sorteio</h3>
+    <p id="msg-participantes-modal">Você tem X participantes nesta banca.</p>
+    <label style="font-size: 12px; color: var(--txt-secundario); display: block; margin-bottom: 6px; text-transform: uppercase; font-weight: bold;">Dividir em quantas mesas?</label>
+    <input type="number" id="input-qtd-mesas" class="input-minimal" style="text-align: center; font-size: 18px; font-weight: bold;" value="1" min="1">
+    <p id="erro-mesas" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
+    <div class="modal-acoes">
+      <button class="btn-modal-cancelar" onclick="fecharModalSorteio()">Cancelar</button>
+      <button class="btn-modal-confirmar" onclick="confirmarSorteio()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-compartilhar" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 style="color: #3b82f6;">Compartilhar Sessão</h3>
+    
+    <div id="share-step-1">
+      <p>Crie uma senha para proteger esta sessão na nuvem:</p>
+      <input type="text" id="input-senha-share" class="input-minimal text-center font-bold" placeholder="Digite uma senha">
+      <p id="erro-share" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
+      <div class="modal-acoes">
+        <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Cancelar</button>
+        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarCompartilhamento()">Gerar Link</button>
+      </div>
+    </div>
+
+    <div id="share-step-2" class="hidden text-center py-4">
+      <p style="color: #3b82f6; font-size: 18px; font-weight: bold;">⏳ Gerando link...</p>
+      <p style="font-size: 12px; color: var(--txt-secundario); margin-top: 8px;">Criptografando e salvando na nuvem.</p>
+    </div>
+
+    <div id="share-step-3" class="hidden text-center">
+      <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Salvo com sucesso!</p>
+      <input type="text" id="input-link-gerado" class="input-minimal text-center text-xs mb-4" readonly>
+      <div class="modal-acoes">
+        <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Fechar</button>
+        <button id="btn-copiar-link" class="btn-modal-confirmar" style="background: #3b82f6;" onclick="copiarLinkGerado()">Copiar Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-receber" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Sessão Privada</h3>
+    
+    <div id="receive-step-1">
+      <p>Você recebeu um link protegido. Digite a senha para acessar a roleta:</p>
+      <input type="password" id="input-senha-receive" class="input-minimal text-center font-bold" placeholder="Senha da sessão">
+      <p id="erro-receive" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
+      <div class="modal-acoes">
+        <button class="btn-modal-cancelar" onclick="cancelarRecebimento()">Cancelar</button>
+        <button class="btn-modal-confirmar" onclick="executarRecebimento()">Acessar</button>
+      </div>
+    </div>
+
+    <div id="receive-step-2" class="hidden text-center py-4">
+      <p style="color: var(--cor-dourada); font-size: 18px; font-weight: bold;">⏳ Descriptografando...</p>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==========================================
 // 1. DADOS GLOBAIS E INICIALIZAÇÃO SEGURA
@@ -435,7 +483,7 @@ function inicializarApp() {
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('s')) {
-        receberSessaoSupabase(urlParams.get('s'));
+        abrirModalReceber(urlParams.get('s'));
         return;
     }
 
@@ -453,24 +501,46 @@ function inicializarApp() {
 }
 
 // ==========================================
-// 2. SISTEMA DE COMPARTILHAMENTO
+// 2. SISTEMA DE COMPARTILHAMENTO (MODAIS)
 // ==========================================
-async function compartilharSessao() {
+
+// --- COMPARTILHAR ---
+function abrirModalCompartilhar() {
     const db = getSupabase();
     if (!db) {
-        alert("❌ O sistema na nuvem não conseguiu ser iniciado.");
+        alert("❌ O sistema na nuvem não está carregado. Verifique sua conexão.");
+        return;
+    }
+    document.getElementById('input-senha-share').value = '';
+    document.getElementById('erro-share').classList.add('hidden');
+    
+    document.getElementById('share-step-1').classList.remove('hidden');
+    document.getElementById('share-step-2').classList.add('hidden');
+    document.getElementById('share-step-3').classList.add('hidden');
+    
+    document.getElementById('modal-compartilhar').classList.remove('hidden');
+}
+
+function fecharModalCompartilhar() {
+    document.getElementById('modal-compartilhar').classList.add('hidden');
+}
+
+async function executarCompartilhamento() {
+    const senha = document.getElementById('input-senha-share').value.trim();
+    const erroEl = document.getElementById('erro-share');
+    
+    if (!senha) {
+        erroEl.innerText = "A senha não pode ser vazia.";
+        erroEl.classList.remove('hidden');
         return;
     }
 
-    const senha = prompt("🔒 Crie uma palavra-passe de acesso para partilhar esta sessão:");
-    if (!senha) return;
-
-    const btn = document.getElementById('btn-compartilhar');
-    const textoOriginal = btn.innerHTML;
-    btn.innerHTML = "⏳ Gerando Link...";
-    btn.disabled = true;
+    // Mostrar carregamento
+    document.getElementById('share-step-1').classList.add('hidden');
+    document.getElementById('share-step-2').classList.remove('hidden');
 
     try {
+        const db = getSupabase();
         const payload = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
         const encriptado = CryptoJS.AES.encrypt(payload, senha).toString();
         const shortId = Math.random().toString(36).substring(2, 8);
@@ -480,42 +550,82 @@ async function compartilharSessao() {
 
         const linkCompartilhavel = window.location.origin + window.location.pathname + "?s=" + shortId;
 
-        navigator.clipboard.writeText(linkCompartilhavel).then(() => {
-            alert("✅ Sessão guardada na nuvem!\n\nLink COPIADO:\n" + linkCompartilhavel + "\n\nEnvie este link e a palavra-passe para as pessoas.");
-        }).catch(() => {
-            prompt("Sessão guardada! Copie o link manualmente:", linkCompartilhavel);
-        });
+        // Mostrar tela de sucesso
+        document.getElementById('input-link-gerado').value = linkCompartilhavel;
+        document.getElementById('btn-copiar-link').innerText = "Copiar Link";
+        
+        document.getElementById('share-step-2').classList.add('hidden');
+        document.getElementById('share-step-3').classList.remove('hidden');
 
     } catch (err) {
-        alert("❌ Erro ao enviar para a nuvem: " + err.message);
-    } finally {
-        btn.innerHTML = textoOriginal;
-        btn.disabled = false;
+        // Voltar para erro
+        document.getElementById('share-step-2').classList.add('hidden');
+        document.getElementById('share-step-1').classList.remove('hidden');
+        erroEl.innerText = "❌ Erro na nuvem: " + err.message;
+        erroEl.classList.remove('hidden');
     }
 }
 
-async function receberSessaoSupabase(shortId) {
+function copiarLinkGerado() {
+    const inputLink = document.getElementById('input-link-gerado');
+    inputLink.select();
+    inputLink.setSelectionRange(0, 99999);
+    
+    navigator.clipboard.writeText(inputLink.value).then(() => {
+        document.getElementById('btn-copiar-link').innerText = "✅ Copiado!";
+    }).catch(() => {
+        document.getElementById('btn-copiar-link').innerText = "Falha ao copiar";
+    });
+}
+
+// --- RECEBER (IMPORTAR) ---
+let sessaoPendenteId = null;
+
+function abrirModalReceber(shortId) {
     const db = getSupabase();
     if (!db) {
-        alert("❌ Nuvem indisponível. Abrindo em modo local.");
+        alert("❌ Nuvem indisponível. Abrindo em modo offline.");
         window.history.replaceState({}, document.title, window.location.pathname);
         inicializarApp();
         return;
     }
 
-    const senha = prompt("🔒 Digite a palavra-passe para aceder a esta sessão:");
-    if (senha === null) {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        inicializarApp();
+    sessaoPendenteId = shortId;
+    document.getElementById('input-senha-receive').value = '';
+    document.getElementById('erro-receive').classList.add('hidden');
+    
+    document.getElementById('receive-step-1').classList.remove('hidden');
+    document.getElementById('receive-step-2').classList.add('hidden');
+    
+    document.getElementById('modal-receber').classList.remove('hidden');
+}
+
+function cancelarRecebimento() {
+    document.getElementById('modal-receber').classList.add('hidden');
+    window.history.replaceState({}, document.title, window.location.pathname);
+    inicializarApp();
+}
+
+async function executarRecebimento() {
+    const senha = document.getElementById('input-senha-receive').value.trim();
+    const erroEl = document.getElementById('erro-receive');
+
+    if (!senha) {
+        erroEl.innerText = "Digite a senha para acessar.";
+        erroEl.classList.remove('hidden');
         return;
     }
+
+    document.getElementById('receive-step-1').classList.add('hidden');
+    document.getElementById('receive-step-2').classList.remove('hidden');
 
     try {
-        const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', shortId).single();
-        if (error || !data) throw new Error("Sessão não encontrada ou já eliminada.");
+        const db = getSupabase();
+        const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', sessaoPendenteId).single();
+        if (error || !data) throw new Error("Sessão não encontrada ou expirada.");
 
         const desencriptado = CryptoJS.AES.decrypt(data.dados, senha).toString(CryptoJS.enc.Utf8);
-        if (!desencriptado) throw new Error("Palavra-passe incorreta.");
+        if (!desencriptado) throw new Error("Senha incorreta.");
 
         const parsed = JSON.parse(desencriptado);
         rankingGlobal = parsed.rankingGlobal || [];
@@ -525,14 +635,16 @@ async function receberSessaoSupabase(shortId) {
         totalMesasConfiguradas = parsed.totalMesasConfiguradas || 1;
 
         salvarDadosRoleta();
-        alert("✅ Sessão importada com sucesso!");
         
+        document.getElementById('modal-receber').classList.add('hidden');
         window.history.replaceState({}, document.title, window.location.pathname);
         abrirRoletaLivre(true);
 
-    } catch (erro) {
-        alert("❌ Falha no acesso: " + erro.message);
-        receberSessaoSupabase(shortId); 
+    } catch (err) {
+        document.getElementById('receive-step-2').classList.add('hidden');
+        document.getElementById('receive-step-1').classList.remove('hidden');
+        erroEl.innerText = "❌ Falha: " + err.message;
+        erroEl.classList.remove('hidden');
     }
 }
 
