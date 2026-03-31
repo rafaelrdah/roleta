@@ -186,6 +186,7 @@
       <div class="resumo-pagamentos" id="resumo">
         <span>Total: <strong id="resumo-total">0</strong></span>
         <span>Pagos: <strong id="resumo-pagos" class="resumo-pago">0</strong></span>
+        <span>Recebido: <strong id="resumo-caixa" class="resumo-pago">R$0</strong></span>
         <span>Falta: <strong id="resumo-restante" class="resumo-pendente">R$0</strong></span>
       </div>
     </header>
@@ -782,10 +783,12 @@ function renderizarListaAtual() {
 
     const total = listaAtual.participantes.length;
     const pagosCount = listaAtual.participantes.filter(p => p.pago).length;
+    const valorRecebido = pagosCount * listaAtual.valor; // Calcula o dinheiro já pago
     const restante = (total - pagosCount) * listaAtual.valor;
 
     document.getElementById('resumo-total').innerText = total;
     document.getElementById('resumo-pagos').innerText = pagosCount;
+    document.getElementById('resumo-caixa').innerText = 'R$' + valorRecebido; // Exibe o valor
     document.getElementById('resumo-restante').innerText = 'R$' + restante;
 
     const divLista = document.getElementById('lista');
