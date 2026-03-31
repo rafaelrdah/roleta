@@ -87,7 +87,7 @@
     .btn-entrar { background-color: var(--cor-destaque); color: white; padding: 8px 16px; }
     .btn-apagar-lista { background-color: transparent; color: var(--cor-nao-pago); border: 1px solid var(--cor-nao-pago); padding: 8px; }
 
-    /* --- TELA DA LISTA (BANCA) - FLEXBOX --- */
+    /* --- TELA DA LISTA (BANCA) --- */
     #tela-lista { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
     
     #tela-lista header { background-color: var(--bg-card); padding: 12px 16px; border-bottom: 1px solid var(--bg-input); flex-shrink: 0; z-index: 10; }
@@ -246,9 +246,14 @@
               Nova Rinha
           </button>
           
-          <button onclick="abrirModalCompartilhar()" class="mt-2 w-full rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2.5 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
-              🔗 Compartilhar Sessão
-          </button>
+          <div class="flex gap-2 mt-2">
+              <button onclick="abrirModalCompartilhar()" class="flex-1 rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2 text-[10px] font-bold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
+                  📤 Gerar Código
+              </button>
+              <button onclick="abrirModalReceber()" class="flex-1 rounded-lg bg-[#22c55e]/20 border border-[#22c55e]/50 py-2 text-[10px] font-bold uppercase tracking-wider text-[#b8f0c3] hover:bg-[#22c55e]/30 transition">
+                  📥 Carregar
+              </button>
+          </div>
 
           <button id="btn-adicionar-mesa" onclick="adicionarMesaManual()" class="mt-2 w-full py-1 text-[10px] font-bold uppercase tracking-widest text-[#d4af37]/40 hover:text-[#d4af37]/80 transition-colors bg-transparent border-none">
               + Adicionar Mesa Manual
@@ -359,28 +364,28 @@
 
 <div id="modal-compartilhar" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3 style="color: #3b82f6;">Compartilhar Sessão</h3>
-    
+    <h3 style="color: #3b82f6;">Gerar Código</h3>
+
     <div id="share-step-1">
-      <p>Deseja gerar um link público para esta roleta?</p>
-      <p style="font-size: 11px; color: var(--txt-secundario); margin-bottom: 16px;">Qualquer pessoa com o link poderá acessar a sessão como ela está agora.</p>
+      <p>Deseja gerar um código de acesso para esta roleta?</p>
+      <p style="font-size: 11px; color: var(--txt-secundario); margin-bottom: 16px;">Qualquer pessoa com o código poderá carregar a sessão como ela está agora.</p>
       <div class="modal-acoes">
         <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Cancelar</button>
-        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarCompartilhamento()">Gerar Link</button>
+        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarCompartilhamento()">Gerar Código</button>
       </div>
     </div>
 
     <div id="share-step-loading" class="hidden text-center py-4">
-      <p style="color: #3b82f6; font-size: 18px; font-weight: bold;">⏳ Gerando link...</p>
+      <p style="color: #3b82f6; font-size: 18px; font-weight: bold;">⏳ Gerando código...</p>
       <p style="font-size: 12px; color: var(--txt-secundario); margin-top: 8px;">Salvando dados na nuvem...</p>
     </div>
 
     <div id="share-step-success" class="hidden text-center">
-      <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Pronto!</p>
-      <input type="text" id="input-link-gerado" class="input-minimal text-center text-xs mb-4" readonly>
+      <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Código Gerado!</p>
+      <input type="text" id="input-codigo-gerado" class="input-minimal text-center font-bold text-xl tracking-widest mb-4 uppercase" readonly>
       <div class="modal-acoes">
         <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Fechar</button>
-        <button id="btn-copiar-link" class="btn-modal-confirmar" style="background: #3b82f6;" onclick="copiarLinkGerado()">Copiar Link</button>
+        <button id="btn-copiar-codigo" class="btn-modal-confirmar" style="background: #3b82f6;" onclick="copiarCodigoGerado()">Copiar Código</button>
       </div>
     </div>
   </div>
@@ -388,19 +393,20 @@
 
 <div id="modal-receber" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3>Sessão Recebida</h3>
+    <h3 style="color: #22c55e;">Carregar Sessão</h3>
     
     <div id="receive-step-1">
-      <p>Você recebeu dados de uma roleta compartilhada. Deseja carregar esta sessão agora?</p>
-      <p id="erro-receive" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
+      <p>Digite ou cole o código da sessão que você recebeu:</p>
+      <input type="text" id="input-codigo-receive" class="input-minimal text-center font-bold text-lg tracking-widest uppercase mb-4" placeholder="Ex: a1b2c3">
+      <p id="erro-receive" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-bottom: 8px; text-align: center; font-weight: 500;"></p>
       <div class="modal-acoes">
-        <button class="btn-modal-cancelar" onclick="cancelarRecebimento()">Cancelar</button>
-        <button class="btn-modal-confirmar" onclick="executarRecebimento()">Acessar</button>
+        <button class="btn-modal-cancelar" onclick="fecharModalReceber()">Cancelar</button>
+        <button class="btn-modal-confirmar" style="background: #22c55e;" onclick="executarRecebimento()">Acessar</button>
       </div>
     </div>
 
     <div id="receive-step-loading" class="hidden text-center py-4">
-      <p style="color: var(--cor-dourada); font-size: 18px; font-weight: bold;">⏳ Baixando dados...</p>
+      <p style="color: #22c55e; font-size: 18px; font-weight: bold;">⏳ Baixando dados...</p>
     </div>
   </div>
 </div>
@@ -420,8 +426,8 @@ let jogadorSorteadoDaVez = null;
 let jogadorEditandoId = null;    
 let jogadorRecebendoValorId = null; 
 
-// Variáveis Inteligentes para Compartilhamento (State Tracking)
-let ultimoLinkGerado = null;
+// Inteligência de Código (State Tracking)
+let ultimoCodigoGerado = null;
 let ultimosDadosCompartilhados = null;
 
 const paletaCores = ['#991b1b', '#5b21b6', '#065f46', '#b45309', '#1e3a8a', '#86198f', '#0f766e', '#b91c1c'];
@@ -480,12 +486,6 @@ function registrarTelaAtiva(tela) {
 function inicializarApp() {
     carregarBancoLocal();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('s')) {
-        abrirModalReceber(urlParams.get('s'));
-        return;
-    }
-
     let telaSalva = 'inicial';
     try { telaSalva = localStorage.getItem('telaAtiva') || 'inicial'; } catch(e){}
 
@@ -500,29 +500,28 @@ function inicializarApp() {
 }
 
 // ==========================================
-// 2. SISTEMA DE COMPARTILHAMENTO INTELIGENTE
+// 2. SISTEMA DE CÓDIGOS INTELIGENTE
 // ==========================================
 
 function abrirModalCompartilhar() {
     const db = getSupabase();
     if (!db) {
-        alert("❌ A nuvem não está conectada. O link não pôde ser gerado.");
+        alert("❌ A nuvem não está conectada. O código não pôde ser gerado.");
         return;
     }
     
     // Tira uma "foto" do estado atual da roleta
     const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
 
-    // Inteligência: Se a página NÃO sofreu alteração desde o último clique, não precisa de botão de gerar
-    if (ultimoLinkGerado && ultimosDadosCompartilhados === payloadAtual) {
-        document.getElementById('input-link-gerado').value = ultimoLinkGerado;
-        document.getElementById('btn-copiar-link').innerText = "Copiar Link";
+    // Se a página NÃO sofreu alteração desde a última vez, reaproveita o código
+    if (ultimoCodigoGerado && ultimosDadosCompartilhados === payloadAtual) {
+        document.getElementById('input-codigo-gerado').value = ultimoCodigoGerado;
+        document.getElementById('btn-copiar-codigo').innerText = "Copiar Código";
         
         document.getElementById('share-step-1').classList.add('hidden');
         document.getElementById('share-step-loading').classList.add('hidden');
         document.getElementById('share-step-success').classList.remove('hidden');
     } else {
-        // Se sofreu alteração (ou é a primeira vez), exibe o botão de Gerar Link
         document.getElementById('share-step-1').classList.remove('hidden');
         document.getElementById('share-step-loading').classList.add('hidden');
         document.getElementById('share-step-success').classList.add('hidden');
@@ -542,22 +541,19 @@ async function executarCompartilhamento() {
     try {
         const db = getSupabase();
         
-        // Salva os dados limpos como JSON (Sem Criptografia)
+        // Salva os dados limpos como JSON (Sem senha/Criptografia)
         const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
         const shortId = Math.random().toString(36).substring(2, 8);
 
         const { error } = await db.from('sessoes_roleta').insert([{ id: shortId, dados: payloadAtual }]);
         if (error) throw error;
 
-        const linkCompartilhavel = window.location.origin + window.location.pathname + "?s=" + shortId;
-
-        // Salva no estado para a inteligência de verificação funcionar da próxima vez
-        ultimoLinkGerado = linkCompartilhavel;
+        ultimoCodigoGerado = shortId;
         ultimosDadosCompartilhados = payloadAtual;
 
         // Exibe Sucesso
-        document.getElementById('input-link-gerado').value = linkCompartilhavel;
-        document.getElementById('btn-copiar-link').innerText = "Copiar Link";
+        document.getElementById('input-codigo-gerado').value = shortId;
+        document.getElementById('btn-copiar-codigo').innerText = "Copiar Código";
         
         document.getElementById('share-step-loading').classList.add('hidden');
         document.getElementById('share-step-success').classList.remove('hidden');
@@ -568,23 +564,21 @@ async function executarCompartilhamento() {
     }
 }
 
-function copiarLinkGerado() {
-    const inputLink = document.getElementById('input-link-gerado');
-    inputLink.select();
-    inputLink.setSelectionRange(0, 99999);
+function copiarCodigoGerado() {
+    const inputCodigo = document.getElementById('input-codigo-gerado');
+    inputCodigo.select();
+    inputCodigo.setSelectionRange(0, 99999);
     
-    navigator.clipboard.writeText(inputLink.value).then(() => {
-        document.getElementById('btn-copiar-link').innerText = "✅ Copiado!";
+    navigator.clipboard.writeText(inputCodigo.value).then(() => {
+        document.getElementById('btn-copiar-codigo').innerText = "✅ Copiado!";
     }).catch(() => {
-        document.getElementById('btn-copiar-link').innerText = "Falha ao copiar";
+        document.getElementById('btn-copiar-codigo').innerText = "Falha ao copiar";
     });
 }
 
-// --- RECEBER (IMPORTAR SEM SENHA) ---
-let sessaoPendenteId = null;
-
-function abrirModalReceber(shortId) {
-    sessaoPendenteId = shortId;
+// --- RECEBER (IMPORTAR VIA CÓDIGO) ---
+function abrirModalReceber() {
+    document.getElementById('input-codigo-receive').value = '';
     document.getElementById('erro-receive').classList.add('hidden');
     
     document.getElementById('receive-step-1').classList.remove('hidden');
@@ -593,16 +587,20 @@ function abrirModalReceber(shortId) {
     document.getElementById('modal-receber').classList.remove('hidden');
 }
 
-function cancelarRecebimento() {
+function fecharModalReceber() {
     document.getElementById('modal-receber').classList.add('hidden');
-    window.history.replaceState({}, document.title, window.location.pathname);
-    inicializarApp();
 }
 
 async function executarRecebimento() {
+    let codigo = document.getElementById('input-codigo-receive').value.trim().toLowerCase();
     const erroEl = document.getElementById('erro-receive');
 
-    // Mostra Carregamento
+    if (!codigo) {
+        erroEl.innerText = "Por favor, digite o código da sessão.";
+        erroEl.classList.remove('hidden');
+        return;
+    }
+
     document.getElementById('receive-step-1').classList.add('hidden');
     document.getElementById('receive-step-loading').classList.remove('hidden');
 
@@ -610,10 +608,9 @@ async function executarRecebimento() {
         const db = getSupabase();
         if (!db) throw new Error("A conexão com a nuvem falhou.");
 
-        const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', sessaoPendenteId).single();
-        if (error || !data) throw new Error("Sessão não encontrada ou link incorreto.");
+        const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', codigo).single();
+        if (error || !data) throw new Error("Código inválido ou sessão não encontrada.");
 
-        // Interpreta os dados limpos (JSON puro sem senha)
         const parsed = JSON.parse(data.dados);
         
         rankingGlobal = parsed.rankingGlobal || [];
@@ -624,12 +621,11 @@ async function executarRecebimento() {
 
         salvarDadosRoleta();
         
-        // Se a pessoa carregou um link que já existe, salva o estado para ela não duplicar sem querer
-        ultimoLinkGerado = window.location.origin + window.location.pathname + "?s=" + sessaoPendenteId;
+        // Atualiza a memória de segurança para não duplicar o mesmo código atoa
+        ultimoCodigoGerado = codigo;
         ultimosDadosCompartilhados = data.dados;
 
-        document.getElementById('modal-receber').classList.add('hidden');
-        window.history.replaceState({}, document.title, window.location.pathname);
+        fecharModalReceber();
         abrirRoletaLivre(true);
 
     } catch (err) {
