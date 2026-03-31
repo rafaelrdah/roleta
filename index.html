@@ -7,7 +7,6 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   
   <style>
@@ -206,6 +205,7 @@
       <button class="btn-adicionar" onclick="adicionar()">➕ Adicionar</button>
     </div>
   </div>
+
 </div>
 
 <div id="roleta-wrapper" class="hidden flex flex-col lg:flex-row h-[100dvh] w-full bg-gradient-to-b from-[#0a0e18] to-[#05070d] text-white font-sans overflow-y-auto lg:overflow-hidden overflow-x-hidden">
@@ -360,23 +360,13 @@
 <div id="modal-compartilhar" class="modal-overlay hidden">
   <div class="modal-box">
     <h3 style="color: #3b82f6;">Compartilhar Sessão</h3>
-    
-    <div id="share-step-1">
-      <p>Crie uma senha para proteger esta sessão na nuvem:</p>
-      <input type="text" id="input-senha-share" class="input-minimal text-center font-bold" placeholder="Digite uma senha">
-      <p id="erro-share" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
-      <div class="modal-acoes">
-        <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Cancelar</button>
-        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarCompartilhamento()">Gerar Link</button>
-      </div>
-    </div>
 
-    <div id="share-step-2" class="hidden text-center py-4">
+    <div id="share-step-loading" class="text-center py-4">
       <p style="color: #3b82f6; font-size: 18px; font-weight: bold;">⏳ Gerando link...</p>
-      <p style="font-size: 12px; color: var(--txt-secundario); margin-top: 8px;">Criptografando e salvando na nuvem.</p>
+      <p style="font-size: 12px; color: var(--txt-secundario); margin-top: 8px;">Salvando dados na nuvem...</p>
     </div>
 
-    <div id="share-step-3" class="hidden text-center">
+    <div id="share-step-success" class="hidden text-center">
       <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Salvo com sucesso!</p>
       <input type="text" id="input-link-gerado" class="input-minimal text-center text-xs mb-4" readonly>
       <div class="modal-acoes">
@@ -389,11 +379,10 @@
 
 <div id="modal-receber" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3>Sessão Privada</h3>
+    <h3>Sessão Recebida</h3>
     
     <div id="receive-step-1">
-      <p>Você recebeu um link protegido. Digite a senha para acessar a roleta:</p>
-      <input type="password" id="input-senha-receive" class="input-minimal text-center font-bold" placeholder="Senha da sessão">
+      <p>Você recebeu dados de uma roleta compartilhada. Deseja carregar esta sessão agora?</p>
       <p id="erro-receive" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
       <div class="modal-acoes">
         <button class="btn-modal-cancelar" onclick="cancelarRecebimento()">Cancelar</button>
@@ -401,8 +390,8 @@
       </div>
     </div>
 
-    <div id="receive-step-2" class="hidden text-center py-4">
-      <p style="color: var(--cor-dourada); font-size: 18px; font-weight: bold;">⏳ Descriptografando...</p>
+    <div id="receive-step-loading" class="hidden text-center py-4">
+      <p style="color: var(--cor-dourada); font-size: 18px; font-weight: bold;">⏳ Baixando dados...</p>
     </div>
   </div>
 </div>
@@ -505,65 +494,47 @@ function inicializarApp() {
 // ==========================================
 
 // --- COMPARTILHAR ---
-function abrirModalCompartilhar() {
+async function abrirModalCompartilhar() {
     const db = getSupabase();
     if (!db) {
-        alert("❌ O sistema na nuvem não está carregado. Verifique sua conexão.");
+        alert("❌ A nuvem não está conectada. O link não pôde ser gerado.");
         return;
     }
-    document.getElementById('input-senha-share').value = '';
-    document.getElementById('erro-share').classList.add('hidden');
     
-    document.getElementById('share-step-1').classList.remove('hidden');
-    document.getElementById('share-step-2').classList.add('hidden');
-    document.getElementById('share-step-3').classList.add('hidden');
-    
+    // Mostra o modal na etapa "Carregando"
+    document.getElementById('share-step-loading').classList.remove('hidden');
+    document.getElementById('share-step-success').classList.add('hidden');
     document.getElementById('modal-compartilhar').classList.remove('hidden');
+
+    try {
+        // Pega os dados direto como JSON (sem senha/criptografia)
+        const payload = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
+        
+        // Gera o ID curto
+        const shortId = Math.random().toString(36).substring(2, 8);
+
+        // Manda pro banco
+        const { error } = await db.from('sessoes_roleta').insert([{ id: shortId, dados: payload }]);
+        if (error) throw error;
+
+        // Monta o link
+        const linkCompartilhavel = window.location.origin + window.location.pathname + "?s=" + shortId;
+
+        // Atualiza o visual para a tela de sucesso
+        document.getElementById('input-link-gerado').value = linkCompartilhavel;
+        document.getElementById('btn-copiar-link').innerText = "Copiar Link";
+        
+        document.getElementById('share-step-loading').classList.add('hidden');
+        document.getElementById('share-step-success').classList.remove('hidden');
+
+    } catch (err) {
+        fecharModalCompartilhar();
+        alert("❌ Erro ao salvar na nuvem: " + err.message);
+    }
 }
 
 function fecharModalCompartilhar() {
     document.getElementById('modal-compartilhar').classList.add('hidden');
-}
-
-async function executarCompartilhamento() {
-    const senha = document.getElementById('input-senha-share').value.trim();
-    const erroEl = document.getElementById('erro-share');
-    
-    if (!senha) {
-        erroEl.innerText = "A senha não pode ser vazia.";
-        erroEl.classList.remove('hidden');
-        return;
-    }
-
-    // Mostrar carregamento
-    document.getElementById('share-step-1').classList.add('hidden');
-    document.getElementById('share-step-2').classList.remove('hidden');
-
-    try {
-        const db = getSupabase();
-        const payload = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
-        const encriptado = CryptoJS.AES.encrypt(payload, senha).toString();
-        const shortId = Math.random().toString(36).substring(2, 8);
-
-        const { error } = await db.from('sessoes_roleta').insert([{ id: shortId, dados: encriptado }]);
-        if (error) throw error;
-
-        const linkCompartilhavel = window.location.origin + window.location.pathname + "?s=" + shortId;
-
-        // Mostrar tela de sucesso
-        document.getElementById('input-link-gerado').value = linkCompartilhavel;
-        document.getElementById('btn-copiar-link').innerText = "Copiar Link";
-        
-        document.getElementById('share-step-2').classList.add('hidden');
-        document.getElementById('share-step-3').classList.remove('hidden');
-
-    } catch (err) {
-        // Voltar para erro
-        document.getElementById('share-step-2').classList.add('hidden');
-        document.getElementById('share-step-1').classList.remove('hidden');
-        erroEl.innerText = "❌ Erro na nuvem: " + err.message;
-        erroEl.classList.remove('hidden');
-    }
 }
 
 function copiarLinkGerado() {
@@ -582,20 +553,11 @@ function copiarLinkGerado() {
 let sessaoPendenteId = null;
 
 function abrirModalReceber(shortId) {
-    const db = getSupabase();
-    if (!db) {
-        alert("❌ Nuvem indisponível. Abrindo em modo offline.");
-        window.history.replaceState({}, document.title, window.location.pathname);
-        inicializarApp();
-        return;
-    }
-
     sessaoPendenteId = shortId;
-    document.getElementById('input-senha-receive').value = '';
     document.getElementById('erro-receive').classList.add('hidden');
     
     document.getElementById('receive-step-1').classList.remove('hidden');
-    document.getElementById('receive-step-2').classList.add('hidden');
+    document.getElementById('receive-step-loading').classList.add('hidden');
     
     document.getElementById('modal-receber').classList.remove('hidden');
 }
@@ -607,27 +569,22 @@ function cancelarRecebimento() {
 }
 
 async function executarRecebimento() {
-    const senha = document.getElementById('input-senha-receive').value.trim();
     const erroEl = document.getElementById('erro-receive');
 
-    if (!senha) {
-        erroEl.innerText = "Digite a senha para acessar.";
-        erroEl.classList.remove('hidden');
-        return;
-    }
-
+    // Mostra Carregamento
     document.getElementById('receive-step-1').classList.add('hidden');
-    document.getElementById('receive-step-2').classList.remove('hidden');
+    document.getElementById('receive-step-loading').classList.remove('hidden');
 
     try {
         const db = getSupabase();
+        if (!db) throw new Error("A conexão com a nuvem falhou.");
+
         const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', sessaoPendenteId).single();
         if (error || !data) throw new Error("Sessão não encontrada ou expirada.");
 
-        const desencriptado = CryptoJS.AES.decrypt(data.dados, senha).toString(CryptoJS.enc.Utf8);
-        if (!desencriptado) throw new Error("Senha incorreta.");
-
-        const parsed = JSON.parse(desencriptado);
+        // Interpreta os dados limpos
+        const parsed = JSON.parse(data.dados);
+        
         rankingGlobal = parsed.rankingGlobal || [];
         participantesRoleta = parsed.participantesRoleta || [];
         corAtualIndex = parsed.corAtualIndex || 0;
@@ -641,7 +598,7 @@ async function executarRecebimento() {
         abrirRoletaLivre(true);
 
     } catch (err) {
-        document.getElementById('receive-step-2').classList.add('hidden');
+        document.getElementById('receive-step-loading').classList.add('hidden');
         document.getElementById('receive-step-1').classList.remove('hidden');
         erroEl.innerText = "❌ Falha: " + err.message;
         erroEl.classList.remove('hidden');
