@@ -87,7 +87,7 @@
     .btn-entrar { background-color: var(--cor-destaque); color: white; padding: 8px 16px; }
     .btn-apagar-lista { background-color: transparent; color: var(--cor-nao-pago); border: 1px solid var(--cor-nao-pago); padding: 8px; }
 
-    /* --- TELA DA LISTA (BANCA) - FLEXBOX CORRIGIDO --- */
+    /* --- TELA DA LISTA (BANCA) - FLEXBOX --- */
     #tela-lista { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
     
     #tela-lista header { background-color: var(--bg-card); padding: 12px 16px; border-bottom: 1px solid var(--bg-input); flex-shrink: 0; z-index: 10; }
@@ -360,14 +360,23 @@
 <div id="modal-compartilhar" class="modal-overlay hidden">
   <div class="modal-box">
     <h3 style="color: #3b82f6;">Compartilhar Sessão</h3>
+    
+    <div id="share-step-1">
+      <p>Deseja gerar um link público para esta roleta?</p>
+      <p style="font-size: 11px; color: var(--txt-secundario); margin-bottom: 16px;">Qualquer pessoa com o link poderá acessar a sessão como ela está agora.</p>
+      <div class="modal-acoes">
+        <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Cancelar</button>
+        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarCompartilhamento()">Gerar Link</button>
+      </div>
+    </div>
 
-    <div id="share-step-loading" class="text-center py-4">
+    <div id="share-step-loading" class="hidden text-center py-4">
       <p style="color: #3b82f6; font-size: 18px; font-weight: bold;">⏳ Gerando link...</p>
       <p style="font-size: 12px; color: var(--txt-secundario); margin-top: 8px;">Salvando dados na nuvem...</p>
     </div>
 
     <div id="share-step-success" class="hidden text-center">
-      <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Salvo com sucesso!</p>
+      <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Pronto!</p>
       <input type="text" id="input-link-gerado" class="input-minimal text-center text-xs mb-4" readonly>
       <div class="modal-acoes">
         <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Fechar</button>
@@ -411,6 +420,10 @@ let jogadorSorteadoDaVez = null;
 let jogadorEditandoId = null;    
 let jogadorRecebendoValorId = null; 
 
+// Variáveis Inteligentes para Compartilhamento (State Tracking)
+let ultimoLinkGerado = null;
+let ultimosDadosCompartilhados = null;
+
 const paletaCores = ['#991b1b', '#5b21b6', '#065f46', '#b45309', '#1e3a8a', '#86198f', '#0f766e', '#b91c1c'];
 
 // --- CONFIGURAÇÃO SUPABASE ---
@@ -431,7 +444,6 @@ function carregarBancoLocal() {
         if (dadosLocais) appData = JSON.parse(dadosLocais);
         if (!appData.listas) appData.listas = [];
     } catch(e) {
-        console.error("Erro ao carregar appData", e);
         appData = { listas: [], listaAtivaId: null };
     }
 }
@@ -447,9 +459,7 @@ function carregarDadosRoleta() {
             mesaAtivaId = parsed.mesaAtivaId || 1;
             totalMesasConfiguradas = parsed.totalMesasConfiguradas || 1;
         }
-    } catch(e) {
-        console.error("Erro ao carregar roleta", e);
-    }
+    } catch(e) {}
 }
 
 function salvarBanca() {
@@ -490,37 +500,62 @@ function inicializarApp() {
 }
 
 // ==========================================
-// 2. SISTEMA DE COMPARTILHAMENTO (MODAIS)
+// 2. SISTEMA DE COMPARTILHAMENTO INTELIGENTE
 // ==========================================
 
-// --- COMPARTILHAR ---
-async function abrirModalCompartilhar() {
+function abrirModalCompartilhar() {
     const db = getSupabase();
     if (!db) {
         alert("❌ A nuvem não está conectada. O link não pôde ser gerado.");
         return;
     }
     
-    // Mostra o modal na etapa "Carregando"
-    document.getElementById('share-step-loading').classList.remove('hidden');
-    document.getElementById('share-step-success').classList.add('hidden');
+    // Tira uma "foto" do estado atual da roleta
+    const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
+
+    // Inteligência: Se a página NÃO sofreu alteração desde o último clique, não precisa de botão de gerar
+    if (ultimoLinkGerado && ultimosDadosCompartilhados === payloadAtual) {
+        document.getElementById('input-link-gerado').value = ultimoLinkGerado;
+        document.getElementById('btn-copiar-link').innerText = "Copiar Link";
+        
+        document.getElementById('share-step-1').classList.add('hidden');
+        document.getElementById('share-step-loading').classList.add('hidden');
+        document.getElementById('share-step-success').classList.remove('hidden');
+    } else {
+        // Se sofreu alteração (ou é a primeira vez), exibe o botão de Gerar Link
+        document.getElementById('share-step-1').classList.remove('hidden');
+        document.getElementById('share-step-loading').classList.add('hidden');
+        document.getElementById('share-step-success').classList.add('hidden');
+    }
+    
     document.getElementById('modal-compartilhar').classList.remove('hidden');
+}
+
+function fecharModalCompartilhar() {
+    document.getElementById('modal-compartilhar').classList.add('hidden');
+}
+
+async function executarCompartilhamento() {
+    document.getElementById('share-step-1').classList.add('hidden');
+    document.getElementById('share-step-loading').classList.remove('hidden');
 
     try {
-        // Pega os dados direto como JSON (sem senha/criptografia)
-        const payload = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
+        const db = getSupabase();
         
-        // Gera o ID curto
+        // Salva os dados limpos como JSON (Sem Criptografia)
+        const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
         const shortId = Math.random().toString(36).substring(2, 8);
 
-        // Manda pro banco
-        const { error } = await db.from('sessoes_roleta').insert([{ id: shortId, dados: payload }]);
+        const { error } = await db.from('sessoes_roleta').insert([{ id: shortId, dados: payloadAtual }]);
         if (error) throw error;
 
-        // Monta o link
         const linkCompartilhavel = window.location.origin + window.location.pathname + "?s=" + shortId;
 
-        // Atualiza o visual para a tela de sucesso
+        // Salva no estado para a inteligência de verificação funcionar da próxima vez
+        ultimoLinkGerado = linkCompartilhavel;
+        ultimosDadosCompartilhados = payloadAtual;
+
+        // Exibe Sucesso
         document.getElementById('input-link-gerado').value = linkCompartilhavel;
         document.getElementById('btn-copiar-link').innerText = "Copiar Link";
         
@@ -531,10 +566,6 @@ async function abrirModalCompartilhar() {
         fecharModalCompartilhar();
         alert("❌ Erro ao salvar na nuvem: " + err.message);
     }
-}
-
-function fecharModalCompartilhar() {
-    document.getElementById('modal-compartilhar').classList.add('hidden');
 }
 
 function copiarLinkGerado() {
@@ -549,7 +580,7 @@ function copiarLinkGerado() {
     });
 }
 
-// --- RECEBER (IMPORTAR) ---
+// --- RECEBER (IMPORTAR SEM SENHA) ---
 let sessaoPendenteId = null;
 
 function abrirModalReceber(shortId) {
@@ -580,9 +611,9 @@ async function executarRecebimento() {
         if (!db) throw new Error("A conexão com a nuvem falhou.");
 
         const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', sessaoPendenteId).single();
-        if (error || !data) throw new Error("Sessão não encontrada ou expirada.");
+        if (error || !data) throw new Error("Sessão não encontrada ou link incorreto.");
 
-        // Interpreta os dados limpos
+        // Interpreta os dados limpos (JSON puro sem senha)
         const parsed = JSON.parse(data.dados);
         
         rankingGlobal = parsed.rankingGlobal || [];
@@ -593,6 +624,10 @@ async function executarRecebimento() {
 
         salvarDadosRoleta();
         
+        // Se a pessoa carregou um link que já existe, salva o estado para ela não duplicar sem querer
+        ultimoLinkGerado = window.location.origin + window.location.pathname + "?s=" + sessaoPendenteId;
+        ultimosDadosCompartilhados = data.dados;
+
         document.getElementById('modal-receber').classList.add('hidden');
         window.history.replaceState({}, document.title, window.location.pathname);
         abrirRoletaLivre(true);
