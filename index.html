@@ -790,11 +790,11 @@ function renderizarListaAtual() {
     document.getElementById('resumo-pagos').innerText = pagosCount;
     document.getElementById('resumo-caixa').innerText = 'R$' + valorRecebido; // Exibe o valor
     document.getElementById('resumo-restante').innerText = 'R$' + restante;
-
     const divLista = document.getElementById('lista');
     divLista.innerHTML = '';
 
-    listaAtual.participantes.forEach((p, i) => {
+    // Função que cria o visual do participante
+    const criarCardParticipante = (p, i) => {
         const div = document.createElement('div');
         div.setAttribute('data-nome', p.nome);
         div.setAttribute('data-slot', p.slot || '');
@@ -820,6 +820,16 @@ function renderizarListaAtual() {
             </div>
         `;
         divLista.appendChild(div);
+    };
+
+    // 1º PASSO: Desenha na tela PRIMEIRO quem ainda NÃO PAGOU (ficam no topo)
+    listaAtual.participantes.forEach((p, i) => {
+        if (!p.pago) criarCardParticipante(p, i);
+    });
+
+    // 2º PASSO: Desenha na tela DEPOIS quem JÁ PAGOU (vão para o final da lista)
+    listaAtual.participantes.forEach((p, i) => {
+        if (p.pago) criarCardParticipante(p, i);
     });
 }
 
