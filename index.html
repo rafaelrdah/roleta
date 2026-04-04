@@ -859,52 +859,62 @@ function abrirModalSorteio() {
 function fecharModalSorteio() { document.getElementById('modal-sorteio').classList.add('hidden'); }
 
 function confirmarSorteio() {
-    const lista = getListaAtiva();
-    let qtdMesas = parseInt(document.getElementById('input-qtd-mesas').value);
-    let totalParticipantes = lista.participantes.length;
+    const lista = getListaAtiva();
+    let qtdMesas = parseInt(document.getElementById('input-qtd-mesas').value);
+    let totalParticipantes = lista.participantes.length;
 
-    if (isNaN(qtdMesas) || qtdMesas < 1) { 
-        document.getElementById('erro-mesas').innerText = "Insira um número válido (mínimo 1)."; 
-        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
-    }
-    if (qtdMesas > totalParticipantes) { 
-        document.getElementById('erro-mesas').innerText = `Erro: Sem pessoas para ${qtdMesas} mesas.`; 
-        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
-    }
+    if (isNaN(qtdMesas) || qtdMesas < 1) { 
+        document.getElementById('erro-mesas').innerText = "Insira um número válido (mínimo 1)."; 
+        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
+    }
+    if (qtdMesas > totalParticipantes) { 
+        document.getElementById('erro-mesas').innerText = `Erro: Sem pessoas para ${qtdMesas} mesas.`; 
+        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
+    }
 
-    fecharModalSorteio();
-    
-    if(confirm(`Iniciar a Roleta dividida em ${qtdMesas} mesa(s)? (Os dados da roleta atual serão apagados)`)) {
-        rankingGlobal = [];
-        participantesRoleta = [];
-        corAtualIndex = 0;
-        mesaAtivaId = 1; 
-        totalMesasConfiguradas = qtdMesas; 
-        
-        let tamanhoBase = Math.floor(totalParticipantes / qtdMesas);
-        let sobra = totalParticipantes % qtdMesas;
+    fecharModalSorteio();
+    
+    if(confirm(`Iniciar a Roleta dividida em ${qtdMesas} mesa(s)? (Os dados da roleta atual serão apagados)`)) {
+        rankingGlobal = [];
+        participantesRoleta = [];
+        corAtualIndex = 0;
+        mesaAtivaId = 1; 
+        totalMesasConfiguradas = qtdMesas; 
+        
+        let tamanhoBase = Math.floor(totalParticipantes / qtdMesas);
+        let sobra = totalParticipantes % qtdMesas;
 
-        let mesaAtualDivisao = 1;
-        let contadorNaMesaAtual = 0;
-        let limiteMesaAtual = tamanhoBase + sobra; 
+        let mesaAtualDivisao = 1;
+        let contadorNaMesaAtual = 0;
+        let limiteMesaAtual = tamanhoBase + sobra; 
 
-        lista.participantes.forEach((p, index) => {
-            const novoJogador = { id: Date.now() + index, nome: p.nome, jogo: p.slot || "Sem Slot", cor: paletaCores[corAtualIndex % paletaCores.length], valorGanho: 0, mesa: mesaAtualDivisao };
-            corAtualIndex++;
-            rankingGlobal.push(novoJogador);
-            participantesRoleta.push(novoJogador);
+        // --- INÍCIO DA ATUALIZAÇÃO: EMBARALHAMENTO ALEATÓRIO ---
+        // Cria uma cópia da lista e sorteia as posições antes de jogar nas mesas
+        let participantesSorteados = [...lista.participantes];
+        for (let i = participantesSorteados.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [participantesSorteados[i], participantesSorteados[j]] = [participantesSorteados[j], participantesSorteados[i]];
+        }
+        // --- FIM DA ATUALIZAÇÃO ---
 
-            contadorNaMesaAtual++;
-            if (contadorNaMesaAtual >= limiteMesaAtual && mesaAtualDivisao < qtdMesas) {
-                mesaAtualDivisao++;
-                contadorNaMesaAtual = 0;
-                limiteMesaAtual = tamanhoBase;
-            }
-        });
+        // Agora ele usa a lista "participantesSorteados" (já bagunçada)
+        participantesSorteados.forEach((p, index) => {
+            const novoJogador = { id: Date.now() + index, nome: p.nome, jogo: p.slot || "Sem Slot", cor: paletaCores[corAtualIndex % paletaCores.length], valorGanho: 0, mesa: mesaAtualDivisao };
+            corAtualIndex++;
+            rankingGlobal.push(novoJogador);
+            participantesRoleta.push(novoJogador);
 
-        salvarDadosRoleta();
-        abrirRoletaLivre();
-    }
+            contadorNaMesaAtual++;
+            if (contadorNaMesaAtual >= limiteMesaAtual && mesaAtualDivisao < qtdMesas) {
+                mesaAtualDivisao++;
+                contadorNaMesaAtual = 0;
+                limiteMesaAtual = tamanhoBase;
+            }
+        });
+
+        salvarDadosRoleta();
+        abrirRoletaLivre();
+    }
 }
 
 // ==========================================
