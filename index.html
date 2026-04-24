@@ -7,29 +7,31 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  
   <style>
     /* =========================================
-       ESTILOS GLOBAIS E DA BANCA
+       ESTILOS GLOBAIS E DA BANCA (TEMA BIBLIOTECA)
        ========================================= */
     :root {
-      --bg-puro: #000000;
-      --bg-card: #141414;
-      --bg-input: #1f1f1f;
-      --txt-primario: #ffffff;
-      --txt-secundario: #a0a0a0;
-      --cor-pago: #22c55e;
-      --cor-nao-pago: #ef4444;
-      --cor-destaque: #3b82f6;
+      --bg-puro: #0a0a0c;
+      --bg-card: rgba(26, 26, 30, 0.7);
+      --bg-input: rgba(0, 0, 0, 0.5);
+      --txt-primario: #f4f4f4;
+      --txt-secundario: #aaa;
+      --cor-pago: #27ae60;
+      --cor-nao-pago: #ff4d4d;
+      --cor-destaque: #8b1c31;
+      --cor-destaque-hover: #a1233b;
       --cor-dourada: #d4af37;
+      --glass-border: rgba(255, 255, 255, 0.1);
     }
 
     .hidden { display: none !important; }
 
     #banca-wrapper {
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg-puro);
+      background-image: radial-gradient(rgba(74, 14, 23, 0.15) 1px, transparent 1px);
+      background-size: 20px 20px;
       color: var(--txt-primario);
       display: flex;
       flex-direction: column;
@@ -39,97 +41,202 @@
     }
 
     #banca-wrapper h1, #banca-wrapper h2, #banca-wrapper h3 { margin: 0; font-weight: 600; }
-    #banca-wrapper button { border: none; cursor: pointer; border-radius: 8px; font-size: 14px; transition: background 0.2s; }
+    #banca-wrapper button { border: none; cursor: pointer; border-radius: 12px; font-size: 14px; transition: all 0.2s; }
 
     .input-minimal { 
       width: 100%; 
       box-sizing: border-box; 
       background-color: var(--bg-input); 
       color: var(--txt-primario); 
-      border: 1px solid transparent; 
-      padding: 12px; 
-      border-radius: 8px; 
+      border: 1px solid var(--glass-border); 
+      padding: 14px; 
+      border-radius: 12px; 
       font-size: 14px; 
+      transition: border 0.3s;
     }
     .input-minimal:focus { outline: none; border-color: var(--cor-destaque); }
 
-    /* Modais Customizados */
+    /* Modais Customizados - Estilo Glassmorphism */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
       display: flex; align-items: center; justify-content: center; z-index: 999;
     }
     .modal-box {
-      background-color: var(--bg-card); border: 1px solid var(--cor-dourada); border-radius: 12px;
-      padding: 24px; width: 90%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      background: var(--bg-card); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border); border-radius: 24px;
+      padding: 25px; width: 90%; max-width: 380px; box-shadow: 0 25px 50px rgba(0,0,0,0.8);
     }
-    .modal-box h3 { color: var(--cor-dourada); margin-bottom: 8px; text-transform: uppercase; font-size: 16px; letter-spacing: 1px; text-align: center; }
+    .modal-box h3 { color: #fff; margin-bottom: 12px; text-transform: uppercase; font-size: 18px; letter-spacing: 1px; text-align: center; }
     .modal-box p { font-size: 13px; color: var(--txt-secundario); margin-bottom: 16px; text-align: center; }
     .modal-acoes { display: flex; gap: 10px; margin-top: 20px; }
-    .btn-modal-cancelar { flex: 1; background: transparent; border: 1px solid var(--txt-secundario); color: var(--txt-primario); padding: 12px; font-weight: 600; }
-    .btn-modal-confirmar { flex: 1; background: var(--cor-destaque); color: white; padding: 12px; font-weight: bold; }
+    
+    .btn-modal-cancelar { 
+      flex: 1; background-color: #1a1a1e; border: 1px solid var(--glass-border); 
+      color: var(--txt-primario); padding: 12px; font-weight: bold; border-radius: 12px;
+    }
+    .btn-modal-cancelar:hover { background-color: #2a2a2e; }
+    
+    .btn-modal-confirmar { 
+      flex: 1; background: linear-gradient(90deg, var(--cor-destaque), var(--cor-destaque-hover)); 
+      color: white; padding: 12px; font-weight: bold; border-radius: 12px; box-shadow: 0 4px 15px rgba(139, 28, 49, 0.4);
+    }
+    .btn-modal-confirmar:hover { transform: scale(1.02); filter: brightness(1.2); }
 
-    /* --- TELA INICIAL (BANCA) --- */
-    #tela-inicial { flex: 1; overflow-y: auto; padding: 20px; }
-    .painel-apresentacao { text-align: center; padding: 24px 16px; background-color: var(--bg-card); border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .painel-apresentacao h1 { font-size: 24px; margin-bottom: 8px; color: var(--cor-destaque); }
-    .painel-apresentacao h2 { font-size: 20px; margin-bottom: 8px; color: var(--cor-dourada); }
+    /* --- TELA INICIAL (BANCA) - COM AJUSTE PARA DESKTOP --- */
+    #tela-inicial { 
+      flex: 1; overflow-y: auto; padding: 20px; 
+      max-width: 500px; 
+      margin: 0 auto; 
+      width: 100%; 
+      box-sizing: border-box;
+    }
+    .painel-apresentacao { 
+      text-align: center; padding: 24px 16px; background: var(--bg-card); 
+      backdrop-filter: blur(15px); border: 1px solid var(--glass-border); 
+      border-radius: 16px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+    }
+    .painel-apresentacao h1 { font-size: 24px; margin-bottom: 8px; color: #fff; }
+    .painel-apresentacao h2 { font-size: 20px; margin-bottom: 8px; color: #fff; }
     .painel-apresentacao p { font-size: 14px; color: var(--txt-secundario); margin-bottom: 20px; }
 
     .form-criar { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-    .btn-criar-novo { background-color: var(--cor-pago); color: #000; font-weight: bold; padding: 14px 24px; font-size: 16px; width: 100%; border-radius: 10px; margin-top: 4px; }
-    .btn-roleta-livre { background-color: var(--cor-dourada); color: #000; font-weight: bold; padding: 14px 24px; font-size: 16px; width: 100%; border-radius: 10px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;}
+    
+    .btn-criar-novo { 
+      background: linear-gradient(90deg, var(--cor-destaque), var(--cor-destaque-hover)); 
+      color: #fff; font-weight: bold; padding: 14px 24px; font-size: 16px; width: 100%; 
+      border-radius: 14px; margin-top: 4px; box-shadow: 0 4px 15px rgba(139, 28, 49, 0.4); 
+    }
+    .btn-criar-novo:hover { transform: scale(1.02); filter: brightness(1.2); }
 
-    .historico-header { font-size: 16px; margin-bottom: 12px; color: var(--txt-secundario); border-bottom: 1px solid var(--bg-input); padding-bottom: 8px; }
-    .card-historico { background-color: var(--bg-card); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .info-historico h3 { font-size: 16px; margin-bottom: 4px; }
+    .btn-text-muted {
+      background: transparent; border: none; color: var(--txt-secundario);
+      font-size: 9px; 
+      font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+      margin-top: 10px; width: 100%; cursor: pointer; transition: color 0.3s;
+    }
+    .btn-text-muted:hover { color: #fff; }
+
+    .btn-roleta-livre { 
+      background-color: #1a1a1e; border: 1px solid var(--glass-border); 
+      color: #fff; font-weight: bold; padding: 14px 24px; font-size: 16px; width: 100%; 
+      border-radius: 14px; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-roleta-livre:hover { background-color: #2a2a2e; }
+
+    .historico-header { font-size: 16px; margin-bottom: 12px; color: var(--txt-secundario); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+    .card-historico { 
+      background: var(--bg-card); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); 
+      border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; 
+      transition: transform 0.2s;
+    }
+    .card-historico:hover { transform: translateY(-3px); }
+    .info-historico h3 { font-size: 16px; margin-bottom: 4px; color: #fff; }
     .info-historico p { font-size: 13px; color: var(--txt-secundario); margin: 0; }
     .acoes-historico { display: flex; gap: 8px; }
-    .btn-entrar { background-color: var(--cor-destaque); color: white; padding: 8px 16px; }
-    .btn-apagar-lista { background-color: transparent; color: var(--cor-nao-pago); border: 1px solid var(--cor-nao-pago); padding: 8px; }
+    .btn-entrar { background: linear-gradient(90deg, var(--cor-destaque), var(--cor-destaque-hover)); color: white; padding: 8px 16px; border-radius: 8px; font-weight: bold;}
+    .btn-apagar-lista { background-color: rgba(255, 77, 77, 0.1); color: var(--cor-nao-pago); border: 1px solid rgba(255, 77, 77, 0.3); padding: 8px; border-radius: 8px; }
 
-    /* --- TELA DA LISTA (BANCA) --- */
-    #tela-lista { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; }
+    /* --- TELA DA LISTA (BANCA) - COM AJUSTE PARA DESKTOP --- */
+    #tela-lista { 
+      display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100%; overflow: hidden; 
+      align-items: center; 
+    }
     
-    #tela-lista header { background-color: var(--bg-card); padding: 12px 16px; border-bottom: 1px solid var(--bg-input); flex-shrink: 0; z-index: 10; }
-    .header-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;}
+    #tela-lista > header,
+    #tela-lista > .container-pesquisa,
+    #tela-lista > #lista,
+    #tela-lista > #painel-adicionar {
+      max-width: 500px; 
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #tela-lista header { 
+      background: rgba(26, 26, 30, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+      padding: 16px; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; z-index: 10; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .header-linha-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px;}
     .titulo-lista { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;}
-    .btn-voltar { background: none; color: var(--cor-destaque); font-size: 20px; padding: 0 8px; }
-    #tela-lista h1 { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .btn-voltar { 
+      background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; 
+      font-size: 16px; padding: 6px 12px; border-radius: 8px; 
+    }
+    
+    #tela-lista h1 { font-size: 18px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .btn-copiar, .btn-exportar { color: white; padding: 6px 12px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; flex-shrink: 0;}
-    .btn-copiar { background-color: var(--cor-destaque); }
-    .btn-exportar { background-color: var(--cor-dourada); color: #000; font-weight: bold; }
+    .btn-copiar, .btn-exportar { 
+      padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; flex-shrink: 0; border-radius: 8px; font-weight: bold;
+    }
+    .btn-copiar { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: #fff; transition: background 0.2s;}
+    .btn-copiar:hover { background: rgba(255,255,255,0.1); }
 
-    .resumo-pagamentos { background-color: var(--bg-input); border-radius: 8px; padding: 8px; display: flex; justify-content: space-around; font-size: 13px; color: var(--txt-secundario); }
+    .btn-exportar { background: linear-gradient(90deg, var(--cor-destaque), var(--cor-destaque-hover)); color: #fff; box-shadow: 0 2px 8px rgba(139, 28, 49, 0.4); }
+
+    .resumo-pagamentos { 
+      background: rgba(0,0,0,0.4); border: 1px dashed var(--glass-border); border-radius: 12px; 
+      padding: 12px; display: flex; justify-content: space-around; font-size: 13px; color: var(--txt-secundario); 
+    }
     .resumo-pagamentos strong { color: var(--txt-primario); }
-    .resumo-pago { color: var(--cor-pago); }
-    .resumo-pendente { color: var(--cor-nao-pago); }
+    .resumo-pago { color: var(--cor-pago) !important; }
+    .resumo-pendente { color: var(--cor-nao-pago) !important; }
 
-    .container-pesquisa { background-color: var(--bg-card); padding: 8px 16px; flex-shrink: 0; border-bottom: 1px solid var(--bg-puro); z-index: 10; }
-    #busca { width: 100%; background-color: var(--bg-input); color: var(--txt-primario); border: 1px solid transparent; padding: 10px; border-radius: 10px; box-sizing: border-box; }
+    .container-pesquisa { background: transparent; padding: 12px 16px 4px 16px; flex-shrink: 0; z-index: 10; }
+    #busca { 
+      width: 100%; background-color: var(--bg-input); color: var(--txt-primario); 
+      border: 1px solid var(--glass-border); padding: 12px; border-radius: 12px; box-sizing: border-box; 
+    }
     
     #lista { flex: 1; overflow-y: auto; padding: 10px 16px 20px 16px; }
 
-    .card { background-color: var(--bg-card); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-    .linha-participante { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .nome-participante { font-size: 15px; font-weight: 500; }
-    .slot-info { font-size: 12px; color: var(--txt-secundario); display: flex; align-items: center; gap: 4px; }
-    .btn-editar-slot { color: var(--txt-secundario); background: none; font-size: 10px; padding: 2px 4px; }
+    .card { 
+      background: var(--bg-card); backdrop-filter: blur(10px); border: 1px solid var(--glass-border);
+      border-radius: 16px; padding: 14px; margin-bottom: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .linha-participante { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .nome-participante { font-size: 15px; font-weight: bold; color: #fff; }
+    .slot-info { font-size: 12px; color: var(--txt-secundario); display: flex; align-items: center; gap: 4px; margin-top: 2px;}
+    .btn-editar-slot { color: var(--txt-secundario); background: none; font-size: 12px; padding: 2px 4px; }
     
-    .acoes-participante { display: flex; gap: 6px; align-items: center; }
-    .btn-toggle-pago { background-color: var(--bg-input); color: var(--txt-secundario); font-size: 16px; width: 36px; height: 36px; display: flex; justify-content: center; align-items: center; }
-    .card.pago-ativo .btn-toggle-pago { background-color: var(--cor-pago); color: #004d2c; }
-    .btn-remover { color: var(--cor-nao-pago); background: none; font-size: 14px; padding: 8px; }
+    .acoes-participante { display: flex; gap: 8px; align-items: center; }
+    .btn-toggle-pago { 
+      background-color: var(--bg-input); border: 1px solid var(--glass-border); color: var(--txt-secundario); 
+      font-size: 16px; width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; border-radius: 10px;
+    }
+    .card.pago-ativo .btn-toggle-pago { background-color: var(--cor-pago); border-color: var(--cor-pago); color: #fff; }
+    .btn-remover { color: var(--cor-nao-pago); background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.2); border-radius: 10px; font-size: 14px; width: 38px; height: 38px; display: flex; justify-content: center; align-items: center; }
 
-    .linha-status { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--txt-secundario); }
-    .status-badge { font-weight: 600; color: var(--cor-nao-pago); }
-    .card.pago-ativo .status-badge { color: var(--cor-pago); }
+    .linha-status { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--txt-secundario); margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.05); padding-top: 8px;}
+    .status-badge { font-weight: bold; color: var(--cor-nao-pago); background: rgba(255,77,77,0.1); padding: 4px 8px; border-radius: 6px;}
+    .card.pago-ativo .status-badge { color: var(--cor-pago); background: rgba(39, 174, 96, 0.1); }
 
-    #painel-adicionar { background-color: var(--bg-card); border-top: 1px solid var(--bg-input); padding: 12px 16px; width: 100%; box-sizing: border-box; flex-shrink: 0; z-index: 10; }
-    #painel-adicionar h2 { font-size: 14px; color: var(--txt-secundario); margin-bottom: 8px; }
-    .input-col { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-    .btn-adicionar { width: 100%; background-color: #166534; color: white; padding: 12px; font-weight: 600; font-size: 15px; }
-    .btn-adicionar:hover { background-color: #15803d; }
+    #painel-adicionar { 
+      background: rgba(26, 26, 30, 0.85); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); 
+      padding: 16px; width: 100%; box-sizing: border-box; flex-shrink: 0; z-index: 10; 
+    }
+    
+    /* Novo estilo para o Cabeçalho Sanfona */
+    .painel-adicionar-header {
+      display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    }
+    #painel-adicionar h2 { 
+      font-size: 14px; color: var(--txt-secundario); margin: 0; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s;
+    }
+    #btn-toggle-painel {
+      background: transparent; color: var(--txt-secundario); font-size: 14px; padding: 4px; font-weight: bold; transition: color 0.3s;
+    }
+    .painel-adicionar-header:hover h2, .painel-adicionar-header:hover #btn-toggle-painel {
+      color: #fff;
+    }
+    #painel-adicionar-conteudo { margin-top: 12px; }
+
+    .input-col { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .btn-adicionar { 
+      width: 100%; background: linear-gradient(90deg, var(--cor-destaque), var(--cor-destaque-hover)); 
+      color: white; padding: 14px; font-weight: bold; font-size: 15px; border-radius: 14px; box-shadow: 0 4px 15px rgba(139, 28, 49, 0.4);
+    }
+    .btn-adicionar:hover { transform: scale(1.02); filter: brightness(1.2); }
 
     /* =========================================
        ESTILOS DA ROLETA
@@ -144,7 +251,7 @@
     #roleta-wrapper ::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.5); }
   </style>
 </head>
-<body class="bg-black m-0 p-0 overflow-hidden">
+<body class="bg-[#0a0a0c] m-0 p-0 overflow-hidden">
 
 <div id="banca-wrapper">
   
@@ -157,6 +264,7 @@
         <input type="text" id="nova-banca-nome" class="input-minimal" placeholder="Nome da Banca (Opcional)">
         <input type="number" id="nova-banca-valor" class="input-minimal" placeholder="Valor Obrigatório" value="20">
         <button class="btn-criar-novo" onclick="criarNovaLista()">➕ Criar Nova Banca</button>
+        <button class="btn-text-muted" onclick="abrirModalConfigGerais()">+ MAIS CONFIGURAÇÕES</button>
       </div>
     </div>
 
@@ -174,10 +282,12 @@
     <header>
       <div class="header-linha-topo">
         <div class="titulo-lista">
-          <button class="btn-voltar" onclick="voltarAoInicio()">←</button>
+          <button class="btn-voltar" onclick="voltarAoInicio()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
           <h1 id="nome-lista-atual">Nome da Banca</h1>
         </div>
-        <div style="display: flex; gap: 5px;">
+        <div style="display: flex; gap: 8px;">
           <button class="btn-copiar" onclick="copiarLista()">📋 Copiar</button>
           <button class="btn-exportar" onclick="abrirModalSorteio()">🎲 Sortear</button>
         </div>
@@ -198,12 +308,17 @@
     <div id="lista"></div>
 
     <div id="painel-adicionar">
-      <h2 id="titulo-adicionar">Adicionar Participante</h2>
-      <div class="input-col">
-        <input type="text" id="nome" class="input-minimal" placeholder="Nome">
-        <input type="text" id="slot" class="input-minimal" placeholder="Slot (opcional)">
+      <div class="painel-adicionar-header" onclick="togglePainelAdicionar()">
+        <h2 id="titulo-adicionar">Adicionar Participante</h2>
+        <button id="btn-toggle-painel">▲</button>
       </div>
-      <button class="btn-adicionar" onclick="adicionar()">➕ Adicionar</button>
+      <div id="painel-adicionar-conteudo">
+        <div class="input-col">
+          <input type="text" id="nome" class="input-minimal" placeholder="Nome">
+          <input type="text" id="slot" class="input-minimal" placeholder="Slot (opcional)">
+        </div>
+        <button class="btn-adicionar" onclick="adicionar()">➕ Adicionar à Banca</button>
+      </div>
     </div>
   </div>
 
@@ -215,7 +330,7 @@
       
       <div class="p-3 bg-[#000]">
         <button onclick="voltarDaRoletaParaBanca()" class="w-full rounded bg-[#1a3a5f] border border-[#d4af37]/30 py-2 text-xs font-semibold uppercase tracking-wider text-[#b8d4f0] hover:brightness-110 transition flex items-center justify-center gap-2">
-           ← Voltar ao Gerenciador
+            ← Voltar ao Gerenciador
         </button>
       </div>
 
@@ -248,11 +363,11 @@
           </button>
           
           <div class="flex gap-2 mt-2">
-              <button onclick="abrirModalCompartilhar()" class="flex-1 rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2 text-[10px] font-bold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
-                  📤 Gerar Código
+              <button onclick="abrirModalExportarRoleta()" class="flex-1 rounded-lg bg-[#3b82f6]/20 border border-[#3b82f6]/50 py-2 text-[10px] font-bold uppercase tracking-wider text-[#b8d4f0] hover:bg-[#3b82f6]/30 transition">
+                  📤 Gerar Arquivo
               </button>
-              <button onclick="abrirModalReceber()" class="flex-1 rounded-lg bg-[#22c55e]/20 border border-[#22c55e]/50 py-2 text-[10px] font-bold uppercase tracking-wider text-[#b8f0c3] hover:bg-[#22c55e]/30 transition">
-                  📥 Carregar Código
+              <button onclick="abrirModalImportarRoleta()" class="flex-1 rounded-lg bg-[#22c55e]/20 border border-[#22c55e]/50 py-2 text-[10px] font-bold uppercase tracking-wider text-[#b8f0c3] hover:bg-[#22c55e]/30 transition">
+                  📥 Carregar Arquivo
               </button>
           </div>
 
@@ -349,11 +464,44 @@
   </aside>
 </div>
 
+<div id="modal-alert" class="modal-overlay hidden" style="z-index: 9999;">
+  <div class="modal-box">
+    <h3 id="alert-titulo" style="color: var(--cor-dourada);">Aviso</h3>
+    <p id="alert-mensagem"></p>
+    <div class="modal-acoes">
+      <button id="btn-alert-ok" class="btn-modal-confirmar" style="width: 100%;" onclick="fecharAlert()">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-confirm" class="modal-overlay hidden" style="z-index: 9999;">
+  <div class="modal-box">
+    <h3 id="confirm-titulo" style="color: var(--cor-dourada);">Confirmação</h3>
+    <p id="confirm-mensagem"></p>
+    <div class="modal-acoes">
+      <button id="btn-confirm-cancel" class="btn-modal-cancelar" onclick="fecharConfirm(false)">Cancelar</button>
+      <button id="btn-confirm-ok" class="btn-modal-confirmar" onclick="fecharConfirm(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-prompt" class="modal-overlay hidden" style="z-index: 9999;">
+  <div class="modal-box">
+    <h3 id="prompt-titulo" style="color: var(--cor-dourada);">Entrada</h3>
+    <p id="prompt-mensagem"></p>
+    <input type="text" id="prompt-input" class="input-minimal" style="margin-bottom: 10px;">
+    <div class="modal-acoes">
+      <button id="btn-prompt-cancel" class="btn-modal-cancelar" onclick="fecharPrompt(false)">Cancelar</button>
+      <button id="btn-prompt-ok" class="btn-modal-confirmar" onclick="fecharPrompt(true)">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-sorteio" class="modal-overlay hidden">
   <div class="modal-box">
     <h3>Preparar Sorteio</h3>
     <p id="msg-participantes-modal">Você tem X participantes nesta banca.</p>
-    <label style="font-size: 12px; color: var(--txt-secundario); display: block; margin-bottom: 6px; text-transform: uppercase; font-weight: bold;">Dividir em quantas mesas?</label>
+    <label style="font-size: 12px; color: var(--txt-secundario); display: block; margin-bottom: 6px; text-transform: uppercase; font-weight: bold; text-align: center;">Dividir em quantas mesas?</label>
     <input type="number" id="input-qtd-mesas" class="input-minimal" style="text-align: center; font-size: 18px; font-weight: bold;" value="1" min="1">
     <p id="erro-mesas" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-top: 8px; text-align: center; font-weight: 500;"></p>
     <div class="modal-acoes">
@@ -363,58 +511,115 @@
   </div>
 </div>
 
-<div id="modal-compartilhar" class="modal-overlay hidden">
+<div id="modal-config-gerais" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3 style="color: #3b82f6;">Gerar Código</h3>
-
-    <div id="share-step-1">
-      <p>Deseja gerar um código de acesso para esta roleta?</p>
-      <p style="font-size: 11px; color: var(--txt-secundario); margin-bottom: 16px;">Qualquer pessoa com o código poderá carregar a sessão como ela está agora.</p>
-      <div class="modal-acoes">
-        <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Cancelar</button>
-        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarCompartilhamento()">Gerar Código</button>
+    <h3>Configurações Gerais</h3>
+    <div class="modal-acoes" style="flex-direction: column; gap: 12px;">
+      
+      <div id="container-exportar-banca" style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+        <select id="select-exportar-banca" class="input-minimal" style="background: rgba(0,0,0,0.3); color: #fff;">
+        </select>
+        <button id="btn-modal-exportar-banca" class="btn-modal-confirmar" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="exportarBancaSelecionada()">
+          💾 Salvar Arquivo (.bpro)
+        </button>
       </div>
+      
+      <button class="btn-modal-confirmar" style="background: #27ae60; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="document.getElementById('input-importar-banca').click()">
+        📂 Carregar Arquivo
+      </button>
+      <input type="file" id="input-importar-banca" accept=".bpro" class="hidden" onchange="importarBancaLocal(event)">
+      
+      <button class="btn-modal-cancelar" style="width: 100%; margin-top: 10px;" onclick="fecharModalConfigGerais()">Fechar</button>
     </div>
+  </div>
+</div>
 
-    <div id="share-step-loading" class="hidden text-center py-4">
-      <p style="color: #3b82f6; font-size: 18px; font-weight: bold;">⏳ Gerando código...</p>
-      <p style="font-size: 12px; color: var(--txt-secundario); margin-top: 8px;">Salvando dados na nuvem...</p>
-    </div>
-
-    <div id="share-step-success" class="hidden text-center">
-      <p style="color: var(--cor-pago); font-weight: bold; margin-bottom: 12px;">✅ Código Gerado!</p>
-      <input type="text" id="input-codigo-gerado" class="input-minimal text-center font-bold text-xl tracking-widest mb-4 uppercase" readonly>
+<div id="modal-exportar-roleta" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 style="color: #3b82f6;">Salvar Roleta</h3>
+    <div>
+      <p>Deseja gerar um arquivo com os dados da mesa atual?</p>
+      <p style="font-size: 11px; color: var(--txt-secundario); margin-bottom: 16px;">Será gerado um arquivo com a extensão exclusiva (.bpro).</p>
       <div class="modal-acoes">
-        <button class="btn-modal-cancelar" onclick="fecharModalCompartilhar()">Fechar</button>
-        <button id="btn-copiar-codigo" class="btn-modal-confirmar" style="background: #3b82f6;" onclick="copiarCodigoGerado()">Copiar Código</button>
+        <button class="btn-modal-cancelar" onclick="fecharModalExportarRoleta()">Cancelar</button>
+        <button class="btn-modal-confirmar" style="background: #3b82f6;" onclick="executarExportacaoRoleta()">Baixar Arquivo</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="modal-receber" class="modal-overlay hidden">
+<div id="modal-importar-roleta" class="modal-overlay hidden">
   <div class="modal-box">
-    <h3 style="color: #22c55e;">Carregar Sessão</h3>
-    
-    <div id="receive-step-1">
-      <p>Digite ou cole o código da sessão que você recebeu:</p>
-      <input type="text" id="input-codigo-receive" class="input-minimal text-center font-bold text-lg tracking-widest uppercase mb-4" placeholder="Ex: a1b2c3">
-      <p id="erro-receive" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-bottom: 8px; text-align: center; font-weight: 500;"></p>
+    <h3 style="color: #22c55e;">Carregar Roleta</h3>
+    <div>
+      <p>Selecione o arquivo (.bpro) da sessão que você recebeu:</p>
+      <input type="file" id="input-arquivo-roleta" accept=".bpro" class="input-minimal" style="margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 10px; cursor: pointer;">
+      <p id="erro-importar-roleta" class="hidden" style="color: var(--cor-nao-pago); font-size: 12px; margin-bottom: 8px; text-align: center; font-weight: bold;"></p>
       <div class="modal-acoes">
-        <button class="btn-modal-cancelar" onclick="fecharModalReceber()">Cancelar</button>
-        <button class="btn-modal-confirmar" style="background: #22c55e;" onclick="executarRecebimento()">Acessar</button>
+        <button class="btn-modal-cancelar" onclick="fecharModalImportarRoleta()">Cancelar</button>
+        <button class="btn-modal-confirmar" style="background: #22c55e;" onclick="executarImportacaoRoleta()">Acessar Mesa</button>
       </div>
-    </div>
-
-    <div id="receive-step-loading" class="hidden text-center py-4">
-      <p style="color: #22c55e; font-size: 18px; font-weight: bold;">⏳ Baixando dados...</p>
     </div>
   </div>
 </div>
 
 <script>
 // ==========================================
-// 1. DADOS GLOBAIS E INICIALIZAÇÃO SEGURA
+// FUNÇÕES DE MODAIS CUSTOMIZADOS (SUBSTITUEM ALERT, CONFIRM, PROMPT)
+// ==========================================
+let resolveAlert, resolveConfirm, resolvePrompt;
+
+function customAlert(mensagem, titulo = "Aviso") {
+    return new Promise(resolve => {
+        document.getElementById('alert-titulo').innerText = titulo;
+        document.getElementById('alert-mensagem').innerText = mensagem;
+        document.getElementById('modal-alert').classList.remove('hidden');
+        resolveAlert = resolve;
+    });
+}
+function fecharAlert() {
+    document.getElementById('modal-alert').classList.add('hidden');
+    if (resolveAlert) resolveAlert();
+}
+
+function customConfirm(mensagem, titulo = "Confirmação") {
+    return new Promise(resolve => {
+        document.getElementById('confirm-titulo').innerText = titulo;
+        document.getElementById('confirm-mensagem').innerText = mensagem;
+        document.getElementById('modal-confirm').classList.remove('hidden');
+        resolveConfirm = resolve;
+    });
+}
+function fecharConfirm(result) {
+    document.getElementById('modal-confirm').classList.add('hidden');
+    if (resolveConfirm) resolveConfirm(result);
+}
+
+function customPrompt(mensagem, valorPadrao = "", titulo = "Entrada") {
+    return new Promise(resolve => {
+        document.getElementById('prompt-titulo').innerText = titulo;
+        document.getElementById('prompt-mensagem').innerText = mensagem;
+        const input = document.getElementById('prompt-input');
+        input.value = valorPadrao;
+        document.getElementById('modal-prompt').classList.remove('hidden');
+        setTimeout(() => input.focus(), 100);
+        resolvePrompt = resolve;
+    });
+}
+function fecharPrompt(isOk) {
+    document.getElementById('modal-prompt').classList.add('hidden');
+    if (resolvePrompt) {
+        resolvePrompt(isOk ? document.getElementById('prompt-input').value : null);
+    }
+}
+
+// Permitir dar Enter no input do Prompt customizado
+document.getElementById('prompt-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') fecharPrompt(true);
+});
+
+// ==========================================
+// VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
 // ==========================================
 let appData = { listas: [], listaAtivaId: null };
 let rankingGlobal = []; 
@@ -427,24 +632,8 @@ let jogadorSorteadoDaVez = null;
 let jogadorEditandoId = null;    
 let jogadorRecebendoValorId = null; 
 
-// Inteligência de Código (State Tracking)
-let ultimoCodigoGerado = null;
-let ultimosDadosCompartilhados = null;
-
 const paletaCores = ['#991b1b', '#5b21b6', '#065f46', '#b45309', '#1e3a8a', '#86198f', '#0f766e', '#b91c1c'];
 
-// --- CONFIGURAÇÃO SUPABASE ---
-const supabaseUrl = 'https://dinogrfsjttfebfyianq.supabase.co'; 
-const supabaseKey = 'sb_publishable_TXUpXknCLmDZP-1R41OOOA_Gxq1dxe1';
-
-function getSupabase() {
-    if (window.supabase) {
-        return window.supabase.createClient(supabaseUrl, supabaseKey);
-    }
-    return null;
-}
-
-// LER LOCALSTORAGE DE FORMA SEGURA
 function carregarBancoLocal() {
     try {
         const dadosLocais = localStorage.getItem('banca_master_data');
@@ -501,144 +690,260 @@ function inicializarApp() {
 }
 
 // ==========================================
-// 2. SISTEMA DE CÓDIGOS INTELIGENTE
+// UTILITÁRIO: DOWNLOAD FORÇADO E TOGGLE
 // ==========================================
+function fallbackDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 
-function abrirModalCompartilhar() {
-    const db = getSupabase();
-    if (!db) {
-        alert("❌ A nuvem não está conectada. O código não pôde ser gerado.");
-        return;
-    }
-    
-    // Tira uma "foto" do estado atual da roleta
-    const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
+function formatarNomeArquivo(nomeOriginal) {
+    let limpo = nomeOriginal.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
+    if (!limpo) limpo = "Sessao";
+    return limpo;
+}
 
-    // Se a página NÃO sofreu alteração desde a última vez, reaproveita o código
-    if (ultimoCodigoGerado && ultimosDadosCompartilhados === payloadAtual) {
-        document.getElementById('input-codigo-gerado').value = ultimoCodigoGerado;
-        document.getElementById('btn-copiar-codigo').innerText = "Copiar Código";
-        
-        document.getElementById('share-step-1').classList.add('hidden');
-        document.getElementById('share-step-loading').classList.add('hidden');
-        document.getElementById('share-step-success').classList.remove('hidden');
+function togglePainelAdicionar() {
+    const conteudo = document.getElementById('painel-adicionar-conteudo');
+    const icone = document.getElementById('btn-toggle-painel');
+    if (conteudo.classList.contains('hidden')) {
+        conteudo.classList.remove('hidden');
+        icone.innerText = '▲';
     } else {
-        document.getElementById('share-step-1').classList.remove('hidden');
-        document.getElementById('share-step-loading').classList.add('hidden');
-        document.getElementById('share-step-success').classList.add('hidden');
-    }
-    
-    document.getElementById('modal-compartilhar').classList.remove('hidden');
-}
-
-function fecharModalCompartilhar() {
-    document.getElementById('modal-compartilhar').classList.add('hidden');
-}
-
-async function executarCompartilhamento() {
-    document.getElementById('share-step-1').classList.add('hidden');
-    document.getElementById('share-step-loading').classList.remove('hidden');
-
-    try {
-        const db = getSupabase();
-        
-        // Salva os dados limpos como JSON (Sem senha/Criptografia)
-        const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
-        const shortId = Math.random().toString(36).substring(2, 8);
-
-        const { error } = await db.from('sessoes_roleta').insert([{ id: shortId, dados: payloadAtual }]);
-        if (error) throw error;
-
-        ultimoCodigoGerado = shortId;
-        ultimosDadosCompartilhados = payloadAtual;
-
-        // Exibe Sucesso
-        document.getElementById('input-codigo-gerado').value = shortId;
-        document.getElementById('btn-copiar-codigo').innerText = "Copiar Código";
-        
-        document.getElementById('share-step-loading').classList.add('hidden');
-        document.getElementById('share-step-success').classList.remove('hidden');
-
-    } catch (err) {
-        fecharModalCompartilhar();
-        alert("❌ Erro ao salvar na nuvem: " + err.message);
-    }
-}
-
-function copiarCodigoGerado() {
-    const inputCodigo = document.getElementById('input-codigo-gerado');
-    inputCodigo.select();
-    inputCodigo.setSelectionRange(0, 99999);
-    
-    navigator.clipboard.writeText(inputCodigo.value).then(() => {
-        document.getElementById('btn-copiar-codigo').innerText = "✅ Copiado!";
-    }).catch(() => {
-        document.getElementById('btn-copiar-codigo').innerText = "Falha ao copiar";
-    });
-}
-
-// --- RECEBER (IMPORTAR VIA CÓDIGO) ---
-function abrirModalReceber() {
-    document.getElementById('input-codigo-receive').value = '';
-    document.getElementById('erro-receive').classList.add('hidden');
-    
-    document.getElementById('receive-step-1').classList.remove('hidden');
-    document.getElementById('receive-step-loading').classList.add('hidden');
-    
-    document.getElementById('modal-receber').classList.remove('hidden');
-}
-
-function fecharModalReceber() {
-    document.getElementById('modal-receber').classList.add('hidden');
-}
-
-async function executarRecebimento() {
-    let codigo = document.getElementById('input-codigo-receive').value.trim().toLowerCase();
-    const erroEl = document.getElementById('erro-receive');
-
-    if (!codigo) {
-        erroEl.innerText = "Por favor, digite o código da sessão.";
-        erroEl.classList.remove('hidden');
-        return;
-    }
-
-    document.getElementById('receive-step-1').classList.add('hidden');
-    document.getElementById('receive-step-loading').classList.remove('hidden');
-
-    try {
-        const db = getSupabase();
-        if (!db) throw new Error("A conexão com a nuvem falhou.");
-
-        const { data, error } = await db.from('sessoes_roleta').select('dados').eq('id', codigo).single();
-        if (error || !data) throw new Error("Código inválido ou sessão não encontrada.");
-
-        const parsed = JSON.parse(data.dados);
-        
-        rankingGlobal = parsed.rankingGlobal || [];
-        participantesRoleta = parsed.participantesRoleta || [];
-        corAtualIndex = parsed.corAtualIndex || 0;
-        mesaAtivaId = parsed.mesaAtivaId || 1;
-        totalMesasConfiguradas = parsed.totalMesasConfiguradas || 1;
-
-        salvarDadosRoleta();
-        
-        // Atualiza a memória de segurança para não duplicar o mesmo código atoa
-        ultimoCodigoGerado = codigo;
-        ultimosDadosCompartilhados = data.dados;
-
-        fecharModalReceber();
-        abrirRoletaLivre(true);
-
-    } catch (err) {
-        document.getElementById('receive-step-loading').classList.add('hidden');
-        document.getElementById('receive-step-1').classList.remove('hidden');
-        erroEl.innerText = "❌ Falha: " + err.message;
-        erroEl.classList.remove('hidden');
+        conteudo.classList.add('hidden');
+        icone.innerText = '▼';
     }
 }
 
 // ==========================================
-// 3. NAVEGAÇÃO ENTRE TELAS
+// FUNÇÕES AUXILIARES DO LEITOR INTELIGENTE
+// ==========================================
+function carregarDadosNoStateDaRoleta(parsed) {
+    rankingGlobal = parsed.rankingGlobal || [];
+    participantesRoleta = parsed.participantesRoleta || [];
+    corAtualIndex = parsed.corAtualIndex || 0;
+    mesaAtivaId = parsed.mesaAtivaId || 1;
+    totalMesasConfiguradas = parsed.totalMesasConfiguradas || 1;
+    salvarDadosRoleta();
+}
+
+function converterBancaParaRoleta(participantesBanca) {
+    let adicionados = 0;
+    participantesBanca.forEach((p, index) => {
+        const nomeJaExiste = getRankingDaMesa().some(j => j.nome.toLowerCase() === p.nome.toLowerCase());
+        if (!nomeJaExiste) {
+            const novoJogador = { 
+                id: Date.now() + index, 
+                nome: p.nome, 
+                jogo: p.slot || "Sem Slot", 
+                cor: paletaCores[corAtualIndex % paletaCores.length], 
+                valorGanho: 0, 
+                mesa: mesaAtivaId 
+            };
+            corAtualIndex++;
+            rankingGlobal.push(novoJogador); 
+            participantesRoleta.push(novoJogador);
+            adicionados++;
+        }
+    });
+    salvarDadosRoleta();
+    atualizarInterfaceRoleta();
+    return adicionados;
+}
+
+// ==========================================
+// SISTEMA DE ARQUIVOS (MAIS CONFIGURAÇÕES E LEITOR - TELA INICIAL)
+// ==========================================
+function abrirModalConfigGerais() {
+    const select = document.getElementById('select-exportar-banca');
+    const containerExportar = document.getElementById('container-exportar-banca');
+    
+    select.innerHTML = '<option value="">Selecione uma banca para salvar...</option>';
+    
+    appData.listas.forEach(banca => {
+        const opt = document.createElement('option');
+        opt.value = banca.id;
+        opt.textContent = banca.nome;
+        select.appendChild(opt);
+    });
+    
+    if(appData.listas.length === 0) {
+        containerExportar.classList.add('hidden');
+    } else {
+        containerExportar.classList.remove('hidden');
+    }
+
+    document.getElementById('modal-config-gerais').classList.remove('hidden');
+}
+
+function fecharModalConfigGerais() {
+    document.getElementById('modal-config-gerais').classList.add('hidden');
+}
+
+async function exportarBancaSelecionada() {
+    const select = document.getElementById('select-exportar-banca');
+    const idSelecionado = select.value;
+    
+    if(!idSelecionado) {
+        await customAlert("Selecione uma banca na lista para poder exportar.", "Atenção");
+        return;
+    }
+    
+    const lista = appData.listas.find(l => l.id === idSelecionado);
+    if(!lista) return;
+
+    const payloadAtual = JSON.stringify(lista);
+    const blob = new Blob([payloadAtual], { type: 'application/octet-stream' }); 
+    
+    const nomeBase = formatarNomeArquivo(lista.nome);
+    const filename = `${nomeBase}.bpro`;
+
+    fallbackDownload(blob, filename);
+    fecharModalConfigGerais();
+}
+
+async function importarBancaLocal(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.bpro')) {
+        await customAlert("Formato inválido! Por favor, selecione um arquivo com final .bpro", "Erro de Arquivo");
+        event.target.value = ''; 
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            
+            // CENÁRIO 1: É realmente um arquivo de Banca
+            if(parsed.id && parsed.participantes) {
+                parsed.id = Date.now().toString(); 
+                appData.listas.push(parsed);
+                appData.listaAtivaId = parsed.id;
+                salvarBanca();
+                fecharModalConfigGerais();
+                abrirTelaLista();
+                await customAlert("Banca carregada com sucesso!", "Sucesso");
+            } 
+            // CENÁRIO 2: O usuário tentou abrir uma Roleta dentro da Banca
+            else if (parsed.rankingGlobal !== undefined && parsed.participantesRoleta !== undefined) {
+                const irParaRoleta = await customConfirm("Este arquivo contém dados de uma Roleta, e não de uma Banca.\n\nDeseja fechar a Banca e carregar esse arquivo lá na Roleta agora?", "Arquivo de Roleta Detectado");
+                if (irParaRoleta) {
+                    carregarDadosNoStateDaRoleta(parsed);
+                    fecharModalConfigGerais();
+                    abrirRoletaLivre(true);
+                }
+            } 
+            else {
+                await customAlert("Arquivo corrompido ou formato desconhecido.", "Erro de Leitura");
+            }
+        } catch(err) { 
+            await customAlert("Erro crítico ao ler o arquivo. Ele pode estar vazio ou corrompido.", "Erro"); 
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; 
+}
+
+// ==========================================
+// SISTEMA DE ARQUIVOS (EXPORTAÇÃO E LEITOR - ROLETA)
+// ==========================================
+function abrirModalExportarRoleta() {
+    document.getElementById('modal-exportar-roleta').classList.remove('hidden');
+}
+
+function fecharModalExportarRoleta() {
+    document.getElementById('modal-exportar-roleta').classList.add('hidden');
+}
+
+function executarExportacaoRoleta() {
+    const payloadAtual = JSON.stringify({ rankingGlobal, participantesRoleta, corAtualIndex, mesaAtivaId, totalMesasConfiguradas });
+    const blob = new Blob([payloadAtual], { type: 'application/octet-stream' });
+
+    let nomeBanca = "Roleta_Livre";
+    const lista = getListaAtiva();
+    if (lista && lista.nome) {
+        nomeBanca = formatarNomeArquivo(lista.nome) + "_Roleta";
+    }
+
+    const filename = `${nomeBanca}.bpro`;
+    fallbackDownload(blob, filename);
+    fecharModalExportarRoleta();
+}
+
+function abrirModalImportarRoleta() {
+    document.getElementById('input-arquivo-roleta').value = '';
+    document.getElementById('erro-importar-roleta').classList.add('hidden');
+    document.getElementById('modal-importar-roleta').classList.remove('hidden');
+}
+
+function fecharModalImportarRoleta() {
+    document.getElementById('modal-importar-roleta').classList.add('hidden');
+}
+
+function executarImportacaoRoleta() {
+    const input = document.getElementById('input-arquivo-roleta');
+    const erroEl = document.getElementById('erro-importar-roleta');
+
+    if (!input.files || input.files.length === 0) {
+        erroEl.innerText = "Selecione o arquivo .bpro primeiro.";
+        erroEl.classList.remove('hidden');
+        return;
+    }
+
+    const file = input.files[0];
+    
+    if (!file.name.toLowerCase().endsWith('.bpro')) {
+        erroEl.innerText = "Formato inválido! Use um arquivo .bpro";
+        erroEl.classList.remove('hidden');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const parsed = JSON.parse(e.target.result);
+            
+            // CENÁRIO 1: É realmente um arquivo de Roleta
+            if (parsed.rankingGlobal !== undefined && parsed.participantesRoleta !== undefined) {
+                carregarDadosNoStateDaRoleta(parsed);
+                fecharModalImportarRoleta();
+                abrirRoletaLivre(true);
+            } 
+            // CENÁRIO 2: O usuário tentou abrir uma Banca direto na Roleta
+            else if (parsed.id && parsed.participantes) {
+                fecharModalImportarRoleta(); 
+                
+                const importarPessoas = await customConfirm(`Este arquivo pertence à banca "${parsed.nome}".\n\nDeseja importar os ${parsed.participantes.length} participantes dela para a mesa que está aberta agora na Roleta?`, "Arquivo de Banca Detectado");
+                
+                if (importarPessoas) {
+                    const qtd = converterBancaParaRoleta(parsed.participantes);
+                    await customAlert(`${qtd} participantes foram adicionados à mesa com sucesso!`, "Importação Concluída");
+                }
+            } 
+            else {
+                erroEl.innerText = "Arquivo inválido ou desconhecido.";
+                erroEl.classList.remove('hidden');
+            }
+        } catch (err) {
+            erroEl.innerText = "❌ Ocorreu um erro ao tentar ler o arquivo.";
+            erroEl.classList.remove('hidden');
+        }
+    };
+    reader.readAsText(file);
+    input.value = ''; 
+}
+
+// ==========================================
+// NAVEGAÇÃO ENTRE TELAS
 // ==========================================
 function getListaAtiva() { return appData.listas.find(l => l.id === appData.listaAtivaId); }
 
@@ -674,17 +979,25 @@ function abrirRoletaLivre(init = false) {
 function voltarDaRoletaParaBanca() { abrirTelaInicial(); }
 
 // ==========================================
-// 4. LÓGICA DA BANCA
+// LÓGICA DA BANCA
 // ==========================================
-function criarNovaLista() {
+async function criarNovaLista() {
     const nomeInput = document.getElementById('nova-banca-nome');
     const valorInput = document.getElementById('nova-banca-valor');
     let nome = nomeInput.value.trim();
     let valorStr = valorInput.value.trim();
 
-    if (!valorStr) { alert("O valor da banca é obrigatório."); valorInput.focus(); return; }
+    if (!valorStr) { 
+        await customAlert("O valor da banca é obrigatório.", "Atenção"); 
+        valorInput.focus(); return; 
+    }
+    
     let valorNum = parseFloat(valorStr.replace(',', '.'));
-    if (isNaN(valorNum) || valorNum <= 0) { alert("Por favor, insira um valor numérico válido."); valorInput.focus(); return; }
+    if (isNaN(valorNum) || valorNum <= 0) { 
+        await customAlert("Por favor, insira um valor numérico válido.", "Erro"); 
+        valorInput.focus(); return; 
+    }
+    
     if (nome === "") { nome = "Banca #" + (appData.listas.length + 1); }
 
     const novaLista = { id: Date.now().toString(), nome: nome, valor: valorNum, participantes: [] };
@@ -696,8 +1009,8 @@ function criarNovaLista() {
 
 function carregarLista(id) { appData.listaAtivaId = id; salvarBanca(); abrirTelaLista(); }
 
-function apagarLista(id) {
-    if(confirm("Tem certeza que deseja excluir esta banca inteira?")) {
+async function apagarLista(id) {
+    if(await customConfirm("Tem certeza que deseja excluir esta banca inteira? Todos os participantes serão perdidos.", "Atenção")) {
         appData.listas = appData.listas.filter(l => l.id !== id);
         salvarBanca(); renderizarHistorico();
     }
@@ -725,7 +1038,7 @@ function renderizarHistorico() {
     });
 }
 
-function adicionar() {
+async function adicionar() {
     const lista = getListaAtiva();
     if(!lista) return;
 
@@ -734,7 +1047,10 @@ function adicionar() {
     const nome = nomeInput.value;
     const slot = slotInput.value;
     
-    if (!nome) return alert('Digite o nome do participante.');
+    if (!nome) {
+        await customAlert('Digite o nome do participante.', 'Aviso');
+        return;
+    }
 
     lista.participantes.push({ nome, slot: slot, pago: false });
     nomeInput.value = ''; slotInput.value = ''; nomeInput.focus();
@@ -743,10 +1059,14 @@ function adicionar() {
     document.getElementById('busca').value = ''; filtrarLista();
 }
 
-function editarSlot(index) {
+async function editarSlot(index) {
     const lista = getListaAtiva();
-    const novoSlot = prompt('Novo slot para ' + lista.participantes[index].nome + ':', lista.participantes[index].slot || '');
+    const participanteNome = lista.participantes[index].nome;
+    const slotAtual = lista.participantes[index].slot || '';
+    
+    const novoSlot = await customPrompt(`Novo slot para ${participanteNome}:`, slotAtual, "Editar Slot");
     if (novoSlot === null) return;
+    
     lista.participantes[index].slot = novoSlot;
     salvarBanca(); renderizarListaAtual();
 }
@@ -757,9 +1077,9 @@ function togglePago(index) {
     salvarBanca(); renderizarListaAtual();
 }
 
-function remover(index) {
+async function remover(index) {
     const lista = getListaAtiva();
-    if (!confirm('Remover ' + lista.participantes[index].nome + '?')) return;
+    if (!await customConfirm(`Remover ${lista.participantes[index].nome} da banca?`, "Remover Participante")) return;
     lista.participantes.splice(index, 1);
     salvarBanca(); renderizarListaAtual();
 }
@@ -783,17 +1103,16 @@ function renderizarListaAtual() {
 
     const total = listaAtual.participantes.length;
     const pagosCount = listaAtual.participantes.filter(p => p.pago).length;
-    const valorRecebido = pagosCount * listaAtual.valor; // Calcula o dinheiro já pago
+    const valorRecebido = pagosCount * listaAtual.valor; 
     const restante = (total - pagosCount) * listaAtual.valor;
 
     document.getElementById('resumo-total').innerText = total;
     document.getElementById('resumo-pagos').innerText = pagosCount;
-    document.getElementById('resumo-caixa').innerText = 'R$' + valorRecebido; // Exibe o valor
+    document.getElementById('resumo-caixa').innerText = 'R$' + valorRecebido; 
     document.getElementById('resumo-restante').innerText = 'R$' + restante;
     const divLista = document.getElementById('lista');
     divLista.innerHTML = '';
 
-    // Função que cria o visual do participante
     const criarCardParticipante = (p, i) => {
         const div = document.createElement('div');
         div.setAttribute('data-nome', p.nome);
@@ -822,34 +1141,41 @@ function renderizarListaAtual() {
         divLista.appendChild(div);
     };
 
-    // 1º PASSO: Desenha na tela PRIMEIRO quem ainda NÃO PAGOU (ficam no topo)
     listaAtual.participantes.forEach((p, i) => {
         if (!p.pago) criarCardParticipante(p, i);
     });
 
-    // 2º PASSO: Desenha na tela DEPOIS quem JÁ PAGOU (vão para o final da lista)
     listaAtual.participantes.forEach((p, i) => {
         if (p.pago) criarCardParticipante(p, i);
     });
 }
 
-function copiarLista() {
+async function copiarLista() {
     const listaAtual = getListaAtiva();
     if(!listaAtual) return;
     let texto = '';
     listaAtual.participantes.forEach(p => {
         texto += `${p.nome}\nSlot: ${p.slot ? p.slot : 'Sem slot'}\nR$ ${listaAtual.valor}:${p.pago ? '✅' : '❌'}\n━━━━━\n`;
     });
-    if (navigator.share) { navigator.share({ title: listaAtual.nome, text: texto }).catch(()=>{}); } 
-    else if (navigator.clipboard) { navigator.clipboard.writeText(texto).then(() => alert('Copiado!')).catch(() => alert('Erro.')); }
+    
+    if (navigator.share) { 
+        navigator.share({ title: listaAtual.nome, text: texto }).catch(()=>{}); 
+    } else if (navigator.clipboard) { 
+        navigator.clipboard.writeText(texto)
+            .then(() => customAlert('Lista copiada para a área de transferência!', 'Sucesso'))
+            .catch(() => customAlert('Erro ao tentar copiar a lista.', 'Erro')); 
+    }
 }
 
 // ==========================================
-// 5. LÓGICA DE DIVISÃO (MODAL DE SORTEIO)
+// LÓGICA DE DIVISÃO (MODAL DE SORTEIO)
 // ==========================================
-function abrirModalSorteio() {
+async function abrirModalSorteio() {
     const lista = getListaAtiva();
-    if(!lista || lista.participantes.length === 0) { alert("Adicione participantes na banca antes de sortear!"); return; }
+    if(!lista || lista.participantes.length === 0) { 
+        await customAlert("Adicione participantes na banca antes de tentar sortear!", "Aviso"); 
+        return; 
+    }
     document.getElementById('msg-participantes-modal').innerText = `Você tem ${lista.participantes.length} participante(s) nesta banca.`;
     document.getElementById('input-qtd-mesas').value = '1';
     document.getElementById('erro-mesas').classList.add('hidden');
@@ -858,67 +1184,63 @@ function abrirModalSorteio() {
 
 function fecharModalSorteio() { document.getElementById('modal-sorteio').classList.add('hidden'); }
 
-function confirmarSorteio() {
-    const lista = getListaAtiva();
-    let qtdMesas = parseInt(document.getElementById('input-qtd-mesas').value);
-    let totalParticipantes = lista.participantes.length;
+async function confirmarSorteio() {
+    const lista = getListaAtiva();
+    let qtdMesas = parseInt(document.getElementById('input-qtd-mesas').value);
+    let totalParticipantes = lista.participantes.length;
 
-    if (isNaN(qtdMesas) || qtdMesas < 1) { 
-        document.getElementById('erro-mesas').innerText = "Insira um número válido (mínimo 1)."; 
-        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
-    }
-    if (qtdMesas > totalParticipantes) { 
-        document.getElementById('erro-mesas').innerText = `Erro: Sem pessoas para ${qtdMesas} mesas.`; 
-        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
-    }
+    if (isNaN(qtdMesas) || qtdMesas < 1) { 
+        document.getElementById('erro-mesas').innerText = "Insira um número válido (mínimo 1)."; 
+        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
+    }
+    if (qtdMesas > totalParticipantes) { 
+        document.getElementById('erro-mesas').innerText = `Erro: Sem pessoas para ${qtdMesas} mesas.`; 
+        document.getElementById('erro-mesas').classList.remove('hidden'); return; 
+    }
 
-    fecharModalSorteio();
-    
-    if(confirm(`Iniciar a Roleta dividida em ${qtdMesas} mesa(s)? (Os dados da roleta atual serão apagados)`)) {
-        rankingGlobal = [];
-        participantesRoleta = [];
-        corAtualIndex = 0;
-        mesaAtivaId = 1; 
-        totalMesasConfiguradas = qtdMesas; 
-        
-        let tamanhoBase = Math.floor(totalParticipantes / qtdMesas);
-        let sobra = totalParticipantes % qtdMesas;
+    fecharModalSorteio();
+    
+    if(await customConfirm(`Iniciar a Roleta dividida em ${qtdMesas} mesa(s)?\n\nIsso irá apagar os dados da Roleta atual e enviar todos desta banca para lá.`, "Atenção")) {
+        rankingGlobal = [];
+        participantesRoleta = [];
+        corAtualIndex = 0;
+        mesaAtivaId = 1; 
+        totalMesasConfiguradas = qtdMesas; 
+        
+        let tamanhoBase = Math.floor(totalParticipantes / qtdMesas);
+        let sobra = totalParticipantes % qtdMesas;
 
-        let mesaAtualDivisao = 1;
-        let contadorNaMesaAtual = 0;
-        let limiteMesaAtual = tamanhoBase + sobra; 
+        let mesaAtualDivisao = 1;
+        let contadorNaMesaAtual = 0;
+        let limiteMesaAtual = tamanhoBase + sobra; 
 
-        // --- INÍCIO DA ATUALIZAÇÃO: EMBARALHAMENTO ALEATÓRIO ---
-        // Cria uma cópia da lista e sorteia as posições antes de jogar nas mesas
         let participantesSorteados = [...lista.participantes];
         for (let i = participantesSorteados.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [participantesSorteados[i], participantesSorteados[j]] = [participantesSorteados[j], participantesSorteados[i]];
         }
-        // --- FIM DA ATUALIZAÇÃO ---
 
-        // Agora ele usa a lista "participantesSorteados" (já bagunçada)
-        participantesSorteados.forEach((p, index) => {
-            const novoJogador = { id: Date.now() + index, nome: p.nome, jogo: p.slot || "Sem Slot", cor: paletaCores[corAtualIndex % paletaCores.length], valorGanho: 0, mesa: mesaAtualDivisao };
-            corAtualIndex++;
-            rankingGlobal.push(novoJogador);
-            participantesRoleta.push(novoJogador);
+        participantesSorteados.forEach((p, index) => {
+            const novoJogador = { id: Date.now() + index, nome: p.nome, jogo: p.slot || "Sem Slot", cor: paletaCores[corAtualIndex % paletaCores.length], valorGanho: 0, mesa: mesaAtualDivisao };
+            corAtualIndex++;
+            rankingGlobal.push(novoJogador);
+            participantesRoleta.push(novoJogador);
 
-            contadorNaMesaAtual++;
-            if (contadorNaMesaAtual >= limiteMesaAtual && mesaAtualDivisao < qtdMesas) {
-                mesaAtualDivisao++;
-                contadorNaMesaAtual = 0;
-                limiteMesaAtual = tamanhoBase;
-            }
-        });
+            contadorNaMesaAtual++;
+            if (contadorNaMesaAtual >= limiteMesaAtual && mesaAtualDivisao < qtdMesas) {
+                mesaAtualDivisao++;
+                contadorNaMesaAtual = 0;
+                limiteMesaAtual = tamanhoBase;
+            }
+        });
 
-        salvarDadosRoleta();
-        abrirRoletaLivre();
-    }
+        salvarDadosRoleta();
+        abrirRoletaLivre();
+    }
 }
 
 // ==========================================
-// 6. LÓGICA DA ROLETA (COM MESAS)
+// LÓGICA DA ROLETA
 // ==========================================
 function getParticipantesDaMesa() { return participantesRoleta.filter(p => p.mesa === mesaAtivaId); }
 function getRankingDaMesa() { return rankingGlobal.filter(p => p.mesa === mesaAtivaId); }
@@ -933,8 +1255,8 @@ function limparErroNomeEdit() {
     document.getElementById('edit-nome').classList.remove('border-[#c41e3a]');
 }
 
-function iniciarNovaRinha() {
-    if(confirm("Deseja realmente apagar todos os dados e iniciar uma Nova Rinha?")) {
+async function iniciarNovaRinha() {
+    if(await customConfirm("Deseja realmente apagar todos os dados e iniciar uma Nova Rinha do zero?", "Nova Rinha")) {
         rankingGlobal = []; participantesRoleta = []; corAtualIndex = 0; jogadorSorteadoDaVez = null; 
         mesaAtivaId = 1; totalMesasConfiguradas = 1; 
         document.getElementById('painel-admin-valor').classList.add('oculto'); 
@@ -1137,19 +1459,24 @@ function prepararPainelValor(id) {
     }
 }
 
-function salvarNovoValor() {
+async function salvarNovoValor() {
     const inputVal = document.getElementById('input-valor'); const valorInformado = parseFloat(inputVal.value.replace(',', '.'));
     if (!isNaN(valorInformado) && valorInformado >= 0 && jogadorRecebendoValorId) {
         const jogador = rankingGlobal.find(j => j.id === jogadorRecebendoValorId);
         if (jogador) { jogador.valorGanho += valorInformado; }
         document.getElementById('painel-admin-valor').classList.add('oculto'); jogadorRecebendoValorId = null;
         salvarDadosRoleta(); atualizarInterfaceRoleta();
-    } else { alert("Insira um valor válido."); }
+    } else { 
+        await customAlert("Insira um valor numérico válido.", "Erro"); 
+    }
 }
 
-function girarRoleta() {
+async function girarRoleta() {
     const participantesDaMesa = getParticipantesDaMesa();
-    if (participantesDaMesa.length === 0) return alert("Adicione participantes na mesa!");
+    if (participantesDaMesa.length === 0) {
+        await customAlert("Adicione participantes na mesa antes de girar!", "Atenção");
+        return;
+    }
     
     const btn = document.getElementById('btn-girar'); btn.disabled = true; btn.style.opacity = '0.5';
 
